@@ -1,7 +1,7 @@
-use bevy::prelude::*;
+use bevy::{core::FixedTimestep, prelude::*};
+use bevy_ggrs::{Rollback, RollbackIdProvider, GGRSApp, GGRSPlugin};
+use ggrs::{GameInput,P2PSpectatorSession, PlayerHandle, SyncTestSession, PlayerType, P2PSession};
 
-use bevy_ggrs::{GGRSApp, GGRSPlugin, RollbackIdProvider};
-use ggrs::{GameInput, P2PSession, P2PSpectatorSession, PlayerHandle, SyncTestSession, PlayerType};
 use std::net::SocketAddr;
 use structopt::StructOpt;
 
@@ -10,23 +10,149 @@ use std::collections::HashMap;
 mod systems;
 use crate::systems::*;
 
+
 #[derive(Default)]
 pub struct TextureAtlasDictionary {
     animation_handles: HashMap<String, Handle<TextureAtlas>>
 }
 
-fn main() {
+
+const FPS: u32 = 128;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+    // read cmd line arguments
+    let opt = Opt::from_args();
+    let num_players = opt.players.len();
+    assert!(num_players > 0);
+
+    let mut p2p_sess = P2PSession::new(2, INPUT_SIZE, opt.local_port)?;
+    p2p_sess.set_sparse_saving(true)?;
+
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugin(GGRSPlugin)
+        .insert_resource(opt)
         .insert_resource(InputEvents::default())
         .insert_resource(TextureAtlasDictionary::default())
+        .add_startup_system(start_p2p_session)
         .add_startup_system(setup)
-        .add_system(player_state_system)
-        .add_system(keyboard_input_system)
-        .add_system(player_movement_system)
+        .register_rollback_type::<Transform>()
+        .register_rollback_type::<PlayerState>()
+        .with_rollback_run_criteria(FixedTimestep::steps_per_second(FPS as f64))
+        .with_input_system(keyboard_input_system.system())
+        .add_rollback_system(player_movement_system)
+        .add_rollback_system(player_state_system)
+        .with_p2p_session(p2p_sess)
+        .add_system(sprite_timers)
         .run();
+    Ok(())
 }
 
+
+fn sprite_timers(
+    mut commands: Commands,
+    time: Res<Time>,
+    texture_atlases: Res<Assets<TextureAtlas>>,
+    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>, Entity, &mut PlayerState)>,
+    res_test: Res<TextureAtlasDictionary>
+) {
+    for (mut timer, mut sprite, texture_atlas_handle, entity, mut player_state) in query.iter_mut() {
+        timer.tick(time.delta());
+        let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
+        match player_state.screen_side {
+            ScreenSideEnum::Left => {
+                sprite.flip_x = false;
+            },
+            ScreenSideEnum::Right => {
+                sprite.flip_x = true;
+            }
+        }
+
+        if timer.finished() {
+            let next = ((player_state.current_sprite_index as usize + 1) % texture_atlas.textures.len()) as u32;
+            //As we start it at 0, we should let the system know "we have finished playing a full animation cycle, who wants next"
+            if next == 0 {
+                let desired_state = player_state.animation_finished();
+                player_state.player_state = desired_state;
+                sprite.index = 0;
+                player_state.current_sprite_index = 0;
+                match player_state.player_state {
+                    PlayerStateEnum::Idle => {
+                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
+                        commands.entity(entity).insert(res_test.animation_handles["sprites/Idle.png"].clone());
+                    },
+                    PlayerStateEnum::Run => {
+                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
+                        commands.entity(entity).insert(res_test.animation_handles["sprites/Run.png"].clone());
+                    },
+                    PlayerStateEnum::Jump => {
+                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
+                        commands.entity(entity).insert(res_test.animation_handles["sprites/Jump.png"].clone());
+                    },
+                    PlayerStateEnum::Attack1 => {
+                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
+                        commands.entity(entity).insert(res_test.animation_handles["sprites/Attack1.png"].clone());
+                    }
+                    PlayerStateEnum::Fall => {
+                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
+                        commands.entity(entity).insert(res_test.animation_handles["sprites/Fall.png"].clone());
+                    }
+                }
+                continue;
+            }
+            sprite.index = next;
+            player_state.current_sprite_index = next as usize;
+        }
+    }
+}
+
+// structopt will read command line parameters for u
+#[derive(StructOpt)]
+struct Opt {
+    #[structopt(short, long)]
+    local_port: u16,
+    #[structopt(short, long)]
+    players: Vec<String>,
+    #[structopt(short, long)]
+    spectators: Vec<SocketAddr>,
+}
+
+fn start_p2p_session(mut p2p_sess: ResMut<P2PSession>, opt: Res<Opt>) {
+    let mut local_handle = 0;
+    let num_players = p2p_sess.num_players() as usize;
+
+    // add players
+    for (i, player_addr) in opt.players.iter().enumerate() {
+        // local player
+        if player_addr == "localhost" {
+            p2p_sess.add_player(PlayerType::Local, i).unwrap();
+            local_handle = i;
+        } else {
+            // remote players
+            let remote_addr: SocketAddr =
+                player_addr.parse().expect("Invalid remote player address");
+            p2p_sess
+                .add_player(PlayerType::Remote(remote_addr), i)
+                .unwrap();
+        }
+    }
+
+    // optionally, add spectators
+    for (i, spec_addr) in opt.spectators.iter().enumerate() {
+        p2p_sess
+            .add_player(PlayerType::Spectator(*spec_addr), num_players + i)
+            .unwrap();
+    }
+
+    // set input delay for the local player
+    p2p_sess.set_frame_delay(2, local_handle).unwrap();
+
+    // set default expected update frequency (affects synchronization timings between players)
+    p2p_sess.set_fps(FPS).expect("Invalid fps");
+
+    // start the GGRS session
+    p2p_sess.start_session().unwrap();
+}
 
 fn load_sprite_atlas_into_texture_dictionary(
     animation_name: String, 
@@ -46,37 +172,35 @@ fn load_sprite_atlas_into_texture_dictionary(
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    mut rip: ResMut<RollbackIdProvider>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut texture_atlas_handles: ResMut<TextureAtlasDictionary>,
+    p2p_session: Option<Res<P2PSession>>,
 ) {
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Idle.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 8);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Run.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 8);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Jump.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 2);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Attack1.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 6);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Fall.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 2);
-    
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    let mut p1_transform = Transform::from_translation(Vec3::new(-100.0, 0.0, 0.0));
-    p1_transform.scale.x = 2.0;
-    p1_transform.scale.y = 2.0;
-    commands
-        .spawn_bundle(SpriteSheetBundle {
-            texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
-            transform:p1_transform,
-            ..Default::default()
-        })
-        .insert(Timer::from_seconds(0.1, true)).insert(PlayerState::new(PlayerStateEnum::Idle, ScreenSideEnum::Left));
 
-    let mut p2_transform = Transform::from_translation(Vec3::new(100.0, 0.0, 0.0));
-    p2_transform.scale.x = 2.0;
-    p2_transform.scale.y = 2.0;
-    commands
-        .spawn_bundle(SpriteSheetBundle {
-            texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
-            transform: p2_transform,
-            ..Default::default()
-        })
-        .insert(Timer::from_seconds(0.1, true)).insert(PlayerState::new(PlayerStateEnum::Idle, ScreenSideEnum::Right));        
+    let num_players = p2p_session
+        .map(|s| s.num_players()).expect("No GGRS session found");
+
+    for i in 0..num_players {
+        commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+        let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), 0.0, 0.0));
+        p1_transform.scale.x = 2.0;
+        p1_transform.scale.y = 2.0;
+        let mut side = ScreenSideEnum::Right;
+        if i == 0 {
+            side = ScreenSideEnum::Left;
+        }
+        commands
+            .spawn_bundle(SpriteSheetBundle {
+                texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
+                transform:p1_transform,
+                ..Default::default()
+            })
+            .insert(Timer::from_seconds(0.1, true)).insert(PlayerState::new(i as usize, PlayerStateEnum::Idle, side)).insert(Rollback::new(rip.next_id()));
+    }
 }
-
-

@@ -1,71 +1,67 @@
 use bevy::prelude::*;
-
+pub const INPUT_SIZE: usize = std::mem::size_of::<InputEvents>();
+use ggrs::{GameInput, P2PSession, P2PSpectatorSession, PlayerHandle, SyncTestSession};
 
 //A Distilation of the true input state
 #[derive(Default)]
 pub struct InputEvents {
-    pub left_right_axis: f32,
-    pub up_down_axis: f32,
-    pub shoot_up_down: f32,
-    pub shoot_left_right: f32,
+    pub left_right_axis: i8,
+    pub up_down_axis: i8,
     pub jump_was_pressed: bool,
     pub attack_1_was_pressed: bool
 }
 
-pub fn keyboard_input_system(keyboard_input: Res<Input<KeyCode>>, mut input_events: ResMut<InputEvents>) {
+impl InputEvents {
+    pub fn convert_input_events_into_vector(&self) -> Vec<u8> {
+        let mut vector = vec![0 as u8; std::mem::size_of::<InputEvents>()];
+        vector[0] = self.left_right_axis as u8;
+    
+        vector[1] = self.up_down_axis as u8;
+    
+        vector[2] = self.jump_was_pressed as u8;
+    
+        vector[3] = self.attack_1_was_pressed as u8;
+        return vector;
+    }    
 
-    if input_events.left_right_axis != 0.0 {
+    pub fn from_input_vector(input: &Res<Vec<GameInput>>, player_index: usize) -> InputEvents {
+        let player_buffer = input[player_index];
+        InputEvents {
+            left_right_axis: input[player_index].buffer[0] as i8,
+            up_down_axis: input[player_index].buffer[1] as i8,
+            jump_was_pressed: input[player_index].buffer[2] != 0,
+            attack_1_was_pressed: input[player_index].buffer[3] != 0,
+        }
+    }
+}
+
+
+pub fn keyboard_input_system(_handle: In<PlayerHandle>, keyboard_input: Res<Input<KeyCode>>, mut input_events: ResMut<InputEvents>) -> Vec<u8> {
+
+    if input_events.left_right_axis != 0 {
         if keyboard_input.pressed(KeyCode::A) == false && keyboard_input.pressed(KeyCode::D) == false {
-            input_events.left_right_axis = 0.0f32;
+            input_events.left_right_axis = 0;
         }
     }
 
     if keyboard_input.just_pressed(KeyCode::A) {
-        input_events.left_right_axis = -1.0f32;
+        input_events.left_right_axis = -1;
     }
     else if keyboard_input.just_pressed(KeyCode::D) {
-        input_events.left_right_axis = 1.0f32;
+        input_events.left_right_axis = 1;
     }
 
-    if input_events.up_down_axis != 0.0 {
+    if input_events.up_down_axis != 0 {
         if keyboard_input.pressed(KeyCode::W) == false && keyboard_input.pressed(KeyCode::S) == false {
-            input_events.up_down_axis = 0.0f32;
+            input_events.up_down_axis = 0;
         }
     }
 
     if keyboard_input.just_pressed(KeyCode::W) {
-        input_events.up_down_axis = -1.0f32;
+        input_events.up_down_axis = -1;
     }
     else if keyboard_input.just_pressed(KeyCode::S) {
-        input_events.up_down_axis = 1.0f32;
-    }
-
-
-    if input_events.shoot_up_down != 0.0 {
-        if keyboard_input.pressed(KeyCode::Up) == false && keyboard_input.pressed(KeyCode::Down) == false {
-            input_events.shoot_up_down = 0.0f32;
-        }
-    }
-
-    if keyboard_input.just_pressed(KeyCode::Up) {
-        input_events.shoot_up_down = 1.0f32;
-    }
-    else if keyboard_input.just_pressed(KeyCode::Down) {
-        input_events.shoot_up_down = -1.0f32;
-    }
-
-
-    if input_events.shoot_left_right != 0.0 {
-        if keyboard_input.pressed(KeyCode::Left) == false && keyboard_input.pressed(KeyCode::Right) == false {
-            input_events.shoot_left_right = 0.0f32;
-        }
-    }
-
-    if keyboard_input.just_pressed(KeyCode::Left) {
-        input_events.shoot_left_right = 1.0f32;
-    }
-    else if keyboard_input.just_pressed(KeyCode::Right) {
-        input_events.shoot_left_right = -1.0f32;
+        input_events.up_down_axis = 1;
     }
 
     input_events.jump_was_pressed = false;
@@ -78,5 +74,5 @@ pub fn keyboard_input_system(keyboard_input: Res<Input<KeyCode>>, mut input_even
     if keyboard_input.just_pressed(KeyCode::Q) {
         input_events.attack_1_was_pressed = true;
     }
-
+    return input_events.convert_input_events_into_vector();
 }

@@ -4,7 +4,8 @@ use crate::systems::*;
 use crate::*;
 
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Hash, Reflect)]
+#[reflect(Hash)]
 pub enum PlayerStateEnum {
     Idle,
     Run,
@@ -19,7 +20,8 @@ impl Default for PlayerStateEnum {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Hash, Reflect)]
+#[reflect(Hash)]
 pub enum ScreenSideEnum {
     Left,
     Right
@@ -31,18 +33,23 @@ impl Default for ScreenSideEnum {
     }
 }
 
-#[derive(Default)]
+#[derive(Hash, Default, Reflect, Copy, Clone)]
+#[reflect(Hash)]
 pub struct PlayerState {
+    pub player_id: usize,
     pub player_state: PlayerStateEnum,
-    pub screen_side: ScreenSideEnum
+    pub screen_side: ScreenSideEnum,
+    pub current_sprite_index: usize
 }
 
 impl PlayerState {
 
-    pub fn new(player_state: PlayerStateEnum, screen_side: ScreenSideEnum) -> PlayerState {
+    pub fn new(player_id: usize, player_state: PlayerStateEnum, screen_side: ScreenSideEnum) -> PlayerState {
         PlayerState {
+            player_id,
             player_state,
-            screen_side
+            screen_side,
+            current_sprite_index: 0
         }
     }
 
@@ -93,23 +100,18 @@ impl PlayerState {
 
 pub fn player_state_system(
     mut commands: Commands,
-    input: Res<InputEvents>,
+    inputs: Res<Vec<GameInput>>,
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>, Entity, &mut PlayerState)>,
     res_test: Res<TextureAtlasDictionary>
 ) {
     for (mut timer, mut sprite, texture_atlas_handle, entity, mut player_state) in query.iter_mut() {
-        match player_state.screen_side {
-            ScreenSideEnum::Left => {
-                sprite.flip_x = false;
-            },
-            ScreenSideEnum::Right => {
-                sprite.flip_x = true;
-            }
-        }
+
+        let input = InputEvents::from_input_vector(&inputs, player_state.player_id);
+
         let mut desired_state = player_state.player_state.clone();
-        if input.left_right_axis != 0.0f32 {
+        if input.left_right_axis != 0 {
             desired_state = PlayerStateEnum::Run;
         }
         else {
@@ -124,45 +126,9 @@ pub fn player_state_system(
             desired_state = PlayerStateEnum::Attack1;
         }
 
-
-        let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-        timer.tick(time.delta());
-        if timer.finished() {
-            let next = ((sprite.index as usize + 1) % texture_atlas.textures.len()) as u32;
-            //As we start it at 0, we should let the system know "we have finished playing a full animation cycle, who wants next"
-            if next == 0 {
-                desired_state = player_state.animation_finished();
-                player_state.player_state = desired_state;
-                sprite.index = 0;
-                match player_state.player_state {
-                    PlayerStateEnum::Idle => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Idle.png"].clone());
-                    },
-                    PlayerStateEnum::Run => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Run.png"].clone());
-                    },
-                    PlayerStateEnum::Jump => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Jump.png"].clone());
-                    },
-                    PlayerStateEnum::Attack1 => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Attack1.png"].clone());
-                    }
-                    PlayerStateEnum::Fall => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Fall.png"].clone());
-                    }
-                }
-                continue;
-            }
-            sprite.index = next;
-        }
-
         if player_state.attempt_to_transition_state(desired_state) {
             sprite.index = 0;
+            player_state.current_sprite_index = 0;
             match player_state.player_state {
                 PlayerStateEnum::Idle => {
                     commands.entity(entity).remove::<Handle<TextureAtlas>>();

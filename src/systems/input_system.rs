@@ -44,10 +44,10 @@ pub fn keyboard_input_system(_handle: In<PlayerHandle>, keyboard_input: Res<Inpu
         }
     }
 
-    if keyboard_input.just_pressed(KeyCode::A) {
+    if keyboard_input.pressed(KeyCode::A) {
         input_events.left_right_axis = -1;
     }
-    else if keyboard_input.just_pressed(KeyCode::D) {
+    if keyboard_input.pressed(KeyCode::D) {
         input_events.left_right_axis = 1;
     }
 
@@ -57,21 +57,21 @@ pub fn keyboard_input_system(_handle: In<PlayerHandle>, keyboard_input: Res<Inpu
         }
     }
 
-    if keyboard_input.just_pressed(KeyCode::W) {
+    if keyboard_input.pressed(KeyCode::W) {
         input_events.up_down_axis = -1;
     }
-    else if keyboard_input.just_pressed(KeyCode::S) {
+    if keyboard_input.pressed(KeyCode::S) {
         input_events.up_down_axis = 1;
     }
 
     input_events.jump_was_pressed = false;
 
-    if keyboard_input.just_pressed(KeyCode::Space) {
+    if keyboard_input.pressed(KeyCode::Space) {
         input_events.jump_was_pressed = true;
     }
 
     input_events.attack_1_was_pressed = false;
-    if keyboard_input.just_pressed(KeyCode::Q) {
+    if keyboard_input.pressed(KeyCode::Q) {
         input_events.attack_1_was_pressed = true;
     }
     return input_events.convert_input_events_into_vector();

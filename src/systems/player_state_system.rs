@@ -14,6 +14,11 @@ pub enum PlayerStateEnum {
     Fall
 }
 
+#[derive(Default, Copy, Clone)]
+pub struct Player1;
+#[derive(Default, Copy, Clone)]
+pub struct Player2;
+
 impl Default for PlayerStateEnum {
     fn default() -> PlayerStateEnum {
         PlayerStateEnum::Idle
@@ -33,13 +38,15 @@ impl Default for ScreenSideEnum {
     }
 }
 
-#[derive(Hash, Default, Reflect, Copy, Clone)]
-#[reflect(Hash)]
+#[derive(Default, Reflect, Copy, Clone)]
 pub struct PlayerState {
     pub player_id: usize,
     pub player_state: PlayerStateEnum,
     pub screen_side: ScreenSideEnum,
-    pub current_sprite_index: usize
+    pub current_sprite_index: usize,
+    pub x_velocity: f32,
+    pub y_velocity: f32,
+    pub is_colliding: bool
 }
 
 impl PlayerState {
@@ -49,7 +56,10 @@ impl PlayerState {
             player_id,
             player_state,
             screen_side,
-            current_sprite_index: 0
+            current_sprite_index: 0,
+            x_velocity: 0.0f32,
+            y_velocity: 0.0f32,
+            is_colliding: false
         }
     }
 
@@ -63,7 +73,6 @@ impl PlayerState {
                 self.player_state = desired_state;
             },
             PlayerStateEnum::Jump => {
-                //If I want to add an air dash, it would be here
             },
             PlayerStateEnum::Attack1 => {
                 if desired_state == PlayerStateEnum::Jump {
@@ -86,7 +95,7 @@ impl PlayerState {
                 PlayerStateEnum::Run
             }
             PlayerStateEnum::Jump => {
-                PlayerStateEnum::Fall
+                PlayerStateEnum::Jump
             },
             PlayerStateEnum::Attack1 => {
                 PlayerStateEnum::Idle
@@ -103,10 +112,10 @@ pub fn player_state_system(
     inputs: Res<Vec<GameInput>>,
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>, Entity, &mut PlayerState)>,
+    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, Entity, &mut PlayerState)>,
     res_test: Res<TextureAtlasDictionary>
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle, entity, mut player_state) in query.iter_mut() {
+    for (mut timer, mut sprite, entity, mut player_state) in query.iter_mut() {
 
         let input = InputEvents::from_input_vector(&inputs, player_state.player_id);
 
@@ -141,6 +150,7 @@ pub fn player_state_system(
                 PlayerStateEnum::Jump => {
                     commands.entity(entity).remove::<Handle<TextureAtlas>>();
                     commands.entity(entity).insert(res_test.animation_handles["sprites/Jump.png"].clone());
+                    player_state.y_velocity = 25.0f32;
                 },
                 PlayerStateEnum::Attack1 => {
                     commands.entity(entity).remove::<Handle<TextureAtlas>>();

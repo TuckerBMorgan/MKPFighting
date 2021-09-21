@@ -5,6 +5,8 @@ use ggrs::{GameInput,P2PSpectatorSession, PlayerHandle, SyncTestSession, PlayerT
 use std::net::SocketAddr;
 use structopt::StructOpt;
 
+//use bevy_rapier2d::prelude::*;
+
 use std::collections::HashMap;
 
 mod systems;
@@ -17,7 +19,8 @@ pub struct TextureAtlasDictionary {
 }
 
 
-const FPS: u32 = 128;
+
+const FPS: u32 = 60;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // read cmd line arguments
@@ -27,6 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut p2p_sess = P2PSession::new(2, INPUT_SIZE, opt.local_port)?;
     p2p_sess.set_sparse_saving(true)?;
+    p2p_sess.set_fps(FPS).expect("Invalid fps");;
 
     App::new()
         .add_plugins(DefaultPlugins)
@@ -38,12 +42,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_startup_system(setup)
         .register_rollback_type::<Transform>()
         .register_rollback_type::<PlayerState>()
-        .with_rollback_run_criteria(FixedTimestep::steps_per_second(FPS as f64))
         .with_input_system(keyboard_input_system.system())
         .add_rollback_system(player_movement_system)
         .add_rollback_system(player_state_system)
         .with_p2p_session(p2p_sess)
         .add_system(sprite_timers)
+        .add_system(collision_system)
         .run();
     Ok(())
 }
@@ -187,20 +191,45 @@ fn setup(
         .map(|s| s.num_players()).expect("No GGRS session found");
 
     for i in 0..num_players {
-        commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-        let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), 0.0, 0.0));
-        p1_transform.scale.x = 2.0;
-        p1_transform.scale.y = 2.0;
-        let mut side = ScreenSideEnum::Right;
         if i == 0 {
-            side = ScreenSideEnum::Left;
+            commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+            let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), 0.0, 0.0));
+            p1_transform.scale.x = 2.0;
+            p1_transform.scale.y = 2.0;
+            let mut side = ScreenSideEnum::Right;
+            if i == 0 {
+                side = ScreenSideEnum::Left;
+            }
+            commands
+                .spawn_bundle(SpriteSheetBundle {
+                    texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
+                    transform:p1_transform,
+                    ..Default::default()
+                })
+                .insert(Timer::from_seconds(0.1, true))
+                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle, side))
+                .insert(Rollback::new(rip.next_id()))
+                .insert(Collider::new(Vec2::new(50.0, 50.0))).insert(Player1::default());
         }
-        commands
-            .spawn_bundle(SpriteSheetBundle {
-                texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
-                transform:p1_transform,
-                ..Default::default()
-            })
-            .insert(Timer::from_seconds(0.1, true)).insert(PlayerState::new(i as usize, PlayerStateEnum::Idle, side)).insert(Rollback::new(rip.next_id()));
+        else {
+            commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+            let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), 0.0, 0.0));
+            p1_transform.scale.x = 2.0;
+            p1_transform.scale.y = 2.0;
+            let mut side = ScreenSideEnum::Right;
+            if i == 0 {
+                side = ScreenSideEnum::Left;
+            }
+            commands
+                .spawn_bundle(SpriteSheetBundle {
+                    texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
+                    transform:p1_transform,
+                    ..Default::default()
+                })
+                .insert(Timer::from_seconds(0.1, true))
+                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle, side))
+                .insert(Rollback::new(rip.next_id()))
+                .insert(Collider::new(Vec2::new(50.0, 50.0))).insert(Player2::default());
+        }
     }
 }

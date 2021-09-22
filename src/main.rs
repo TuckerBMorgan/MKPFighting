@@ -1,11 +1,11 @@
-use bevy::{core::FixedTimestep, prelude::*};
-use bevy_ggrs::{Rollback, RollbackIdProvider, GGRSApp, GGRSPlugin};
-use ggrs::{GameInput,P2PSpectatorSession, PlayerHandle, SyncTestSession, PlayerType, P2PSession};
-
 use std::net::SocketAddr;
 use structopt::StructOpt;
+use std::path::Path;
 
-//use bevy_rapier2d::prelude::*;
+use bevy::{prelude::*};
+use bevy_ggrs::{Rollback, RollbackIdProvider, GGRSApp, GGRSPlugin};
+use ggrs::{GameInput, PlayerType, P2PSession};
+
 
 use std::collections::HashMap;
 
@@ -30,12 +30,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut p2p_sess = P2PSession::new(2, INPUT_SIZE, opt.local_port)?;
     p2p_sess.set_sparse_saving(true)?;
-    p2p_sess.set_fps(FPS).expect("Invalid fps");;
-
+    p2p_sess.set_fps(FPS).expect("Invalid fps");
+    /*
+    let fake_collider_set = ColliderSetComponent::fake_one();
+    let serialized = serde_json::to_string(&fake_collider_set).unwrap();
+    println!("{}", serialized);
+    Ok(())
+    */
+    let collider_both = Path::new("./assets/hitboxes/character_1.json");
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(GGRSPlugin)
         .insert_resource(opt)
+        .insert_resource(ColliderSetComponent::from_file(&collider_both))
         .insert_resource(InputEvents::default())
         .insert_resource(TextureAtlasDictionary::default())
         .add_startup_system(start_p2p_session)
@@ -50,6 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_system(collision_system)
         .run();
     Ok(())
+    
 }
 
 
@@ -162,7 +170,7 @@ fn load_sprite_atlas_into_texture_dictionary(
     animation_name: String, 
     asset_server: &Res<AssetServer>, 
     texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
-    mut texture_atlas_handles: &mut ResMut<TextureAtlasDictionary>,
+    texture_atlas_handles: &mut ResMut<TextureAtlasDictionary>,
     width: f32,
     height: f32,
     number_of_images: usize
@@ -209,7 +217,8 @@ fn setup(
                 .insert(Timer::from_seconds(0.1, true))
                 .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle, side))
                 .insert(Rollback::new(rip.next_id()))
-                .insert(Collider::new(Vec2::new(50.0, 50.0))).insert(Player1::default());
+                .insert(Collider::new(Vec3::new(0.0, 0.0, 0.0), Vec2::new(50.0, 50.0)))
+                .insert(Player1::default());
         }
         else {
             commands.spawn_bundle(OrthographicCameraBundle::new_2d());
@@ -229,7 +238,7 @@ fn setup(
                 .insert(Timer::from_seconds(0.1, true))
                 .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle, side))
                 .insert(Rollback::new(rip.next_id()))
-                .insert(Collider::new(Vec2::new(50.0, 50.0))).insert(Player2::default());
+                .insert(Player2::default());
         }
     }
 }

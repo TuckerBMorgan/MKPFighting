@@ -6,9 +6,9 @@ const GRAVITY : f32 = 1.00f32;
 
 pub fn player_movement_system(
     inputs: Res<Vec<GameInput>>,
-    mut query: Query<(&mut Timer, &mut Transform, &mut PlayerState)>,    
+    mut query: Query<(&mut Transform, &mut PlayerState)>,    
 ) {
-    for (mut timer, mut transform, mut player_state) in query.iter_mut() {
+    for (mut transform, mut player_state) in query.iter_mut() {
         let input = InputEvents::from_input_vector(&inputs, player_state.player_id);
         transform.translation += Vec3::new(player_state.x_velocity, player_state.y_velocity, 0.0);// * input.left_right_axis as f32;
 

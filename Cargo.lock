@@ -2256,6 +2256,8 @@ dependencies = [
  "bevy",
  "bevy_ggrs",
  "ggrs",
+ "serde",
+ "serde_json",
  "structopt",
 ]
 

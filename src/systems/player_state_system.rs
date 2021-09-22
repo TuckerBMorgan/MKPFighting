@@ -14,6 +14,28 @@ pub enum PlayerStateEnum {
     Fall
 }
 
+impl PlayerStateEnum {
+    pub fn to_string(&self) -> String {
+        match self {
+            PlayerStateEnum::Idle => {
+                String::from("Idle")
+            },
+            PlayerStateEnum::Run => {
+                String::from("Run")
+            },
+            PlayerStateEnum::Jump => {
+                String::from("Jump")
+            },
+            PlayerStateEnum::Attack1 => {
+                String::from("Attack1")
+            },
+            PlayerStateEnum::Fall => {
+                String::from("Fall")
+            }
+        }
+    }
+}
+
 #[derive(Default, Copy, Clone)]
 pub struct Player1;
 #[derive(Default, Copy, Clone)]
@@ -110,16 +132,14 @@ impl PlayerState {
 pub fn player_state_system(
     mut commands: Commands,
     inputs: Res<Vec<GameInput>>,
-    time: Res<Time>,
-    texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, Entity, &mut PlayerState)>,
+    mut query: Query<(&mut TextureAtlasSprite, Entity, &mut PlayerState)>,
     res_test: Res<TextureAtlasDictionary>
 ) {
-    for (mut timer, mut sprite, entity, mut player_state) in query.iter_mut() {
+    for (mut sprite, entity, mut player_state) in query.iter_mut() {
 
         let input = InputEvents::from_input_vector(&inputs, player_state.player_id);
 
-        let mut desired_state = player_state.player_state.clone();
+        let mut desired_state;
         if input.left_right_axis != 0 {
             desired_state = PlayerStateEnum::Run;
         }

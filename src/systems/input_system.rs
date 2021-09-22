@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 pub const INPUT_SIZE: usize = std::mem::size_of::<InputEvents>();
-use ggrs::{GameInput, P2PSession, P2PSpectatorSession, PlayerHandle, SyncTestSession};
+use ggrs::{GameInput, PlayerHandle};
 
 //A Distilation of the true input state
 #[derive(Default)]
@@ -25,7 +25,6 @@ impl InputEvents {
     }    
 
     pub fn from_input_vector(input: &Res<Vec<GameInput>>, player_index: usize) -> InputEvents {
-        let player_buffer = input[player_index];
         InputEvents {
             left_right_axis: input[player_index].buffer[0] as i8,
             up_down_axis: input[player_index].buffer[1] as i8,

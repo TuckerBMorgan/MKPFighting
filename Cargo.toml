@@ -10,3 +10,5 @@ ggrs = { git = "https://github.com/gschup/ggrs", branch = "main"}
 bevy_ggrs = { git = "https://github.com/gschup/bevy_ggrs", branch = "main"}
 bevy = { git = "https://github.com/bevyengine/bevy", branch = "main"}
 structopt = { version = "0.3", default-features = false }
+serde = "1.0.130"
+serde_json = "1.0"

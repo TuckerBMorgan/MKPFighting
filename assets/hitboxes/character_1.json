@@ -10,9 +10,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -23,9 +24,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -36,9 +38,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -49,35 +52,62 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
                 {
                     "offset":[
-                        50.0,
+                        100.0,
+                        20.0,
+                        0.0
+                    ],
+                    "dimension":[
+                        100.0,
+                        120.0
+                    ],
+                    "collider_type":"HurtBox"
+                },
+                {
+                    "offset":[
+                        20.0,
                         0.0,
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
                 {
                     "offset":[
-                        50.0,
+                        0.0,
                         0.0,
                         0.0
                     ],
                     "dimension":[
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
+                },
+                {
+                    "offset":[
                         50.0,
+                        75.0,
+                        0.0
+                    ],
+                    "dimension":[
+                        200.0,
                         50.0
-                    ]
+                    ],
+                    "collider_type":"HurtBox"
                 }
             ]
         ],
@@ -91,9 +121,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -104,9 +135,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ]
         ],
@@ -120,9 +152,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -133,9 +166,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ]
         ],
@@ -149,9 +183,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -162,9 +197,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -175,9 +211,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -188,9 +225,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -201,9 +239,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -214,9 +253,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -227,9 +267,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -240,9 +281,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ]
         ],
@@ -256,9 +298,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -269,9 +312,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -282,9 +326,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -295,9 +340,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -308,9 +354,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -321,9 +368,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -334,9 +382,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ],
             [
@@ -347,9 +396,10 @@
                         0.0
                     ],
                     "dimension":[
-                        50.0,
-                        50.0
-                    ]
+                        100.0,
+                        100.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ]
         ]

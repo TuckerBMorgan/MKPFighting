@@ -23,7 +23,7 @@ impl ColliderSetComponent {
     }
 
     pub fn fake_one() -> ColliderSetComponent {
-        let collider = Collider::new(Vec3::new(1.0, 2.0, 3.0), Vec2::new(0.0, -10.0));
+        let collider = Collider::new(Vec3::new(1.0, 2.0, 3.0), Vec2::new(0.0, -10.0), ColliderType::HitBox);
         let inner = vec![collider];
         let outer = vec![inner];
         let mut maps = HashMap::new();
@@ -37,21 +37,28 @@ impl ColliderSetComponent {
 
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
+pub enum ColliderType {
+    HitBox,
+    HurtBox
+}
+
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct Collider {
     offset: Vec3,
-    dimension: Vec2
+    dimension: Vec2,
+    collider_type: ColliderType
 }
 
 
 impl Collider {
-    pub fn new(offset: Vec3, dimension: Vec2) -> Collider {
+    pub fn new(offset: Vec3, dimension: Vec2, collider_type: ColliderType) -> Collider {
         Collider {
             offset,
-            dimension
+            dimension,
+            collider_type
         }
     }
 }
-
 pub fn collision_system(
     collider_boxes: Res<ColliderSetComponent>,
     mut player_1_query: Query<(&Transform, &Player1, &mut PlayerState), Without<Player2>>,

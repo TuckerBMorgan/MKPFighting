@@ -217,7 +217,6 @@ fn setup(
                 .insert(Timer::from_seconds(0.1, true))
                 .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle, side))
                 .insert(Rollback::new(rip.next_id()))
-                .insert(Collider::new(Vec3::new(0.0, 0.0, 0.0), Vec2::new(50.0, 50.0)))
                 .insert(Player1::default());
         }
         else {

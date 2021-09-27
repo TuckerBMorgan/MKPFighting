@@ -3,6 +3,8 @@ use ggrs::{GameInput};
 use crate::systems::*;
 
 const GRAVITY : f32 = 1.00f32;
+pub const FLOOR_HEIGHT : f32 = -250.0f32;
+pub const PLAYER_SPEED : f32 = 5.0f32;
 
 pub fn player_movement_system(
     inputs: Res<Vec<GameInput>>,
@@ -14,7 +16,7 @@ pub fn player_movement_system(
 
         match player_state.player_state {
             PlayerStateEnum::Run => {
-                transform.translation += Vec3::new(1.0, 0.0, 0.0) * input.left_right_axis as f32;
+                transform.translation += Vec3::new(PLAYER_SPEED, 0.0, 0.0) * input.left_right_axis as f32;
             },
             PlayerStateEnum::Jump => {
                 player_state.y_velocity -= GRAVITY;
@@ -24,10 +26,10 @@ pub fn player_movement_system(
             },
             PlayerStateEnum::Fall => {
                 player_state.y_velocity -= GRAVITY;
-                if transform.translation.y < 0.0f32 {
+                if transform.translation.y < FLOOR_HEIGHT {
                     player_state.player_state = PlayerStateEnum::Idle;
                     player_state.y_velocity = 0.0f32;
-                    transform.translation.y = 0.0f32;
+                    transform.translation.y = FLOOR_HEIGHT;
                 }
             },
             PlayerStateEnum::Idle => {

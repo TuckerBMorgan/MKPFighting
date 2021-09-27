@@ -12,7 +12,7 @@ use crate::systems::*;
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct ColliderSetComponent {
-    colliders: HashMap<String, Vec<Vec<Collider>>>
+    pub colliders: HashMap<String, Vec<Vec<Collider>>>
 }
 
 impl ColliderSetComponent {
@@ -44,9 +44,9 @@ pub enum ColliderType {
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct Collider {
-    offset: Vec3,
-    dimension: Vec2,
-    collider_type: ColliderType
+    pub offset: Vec3,
+    pub dimension: Vec2,
+    pub collider_type: ColliderType
 }
 
 
@@ -61,12 +61,12 @@ impl Collider {
 }
 pub fn collision_system(
     collider_boxes: Res<ColliderSetComponent>,
-    mut player_1_query: Query<(&Transform, &Player1, &mut PlayerState), Without<Player2>>,
-    mut player_2_query: Query<(&Transform, &Player2, &mut PlayerState), Without<Player1>>) {
+    mut player_1_query: Query<(&Transform, &Player1, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum), Without<Player2>>,
+    mut player_2_query: Query<(&Transform, &Player2, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum), Without<Player1>>) {
     
         
-    for (&transform_1, &_player_1, mut player_state_1) in player_1_query.iter_mut() {
-        for (&transform_2, &_player_2, mut player_state_2) in player_2_query.iter_mut() {
+    for (&transform_1, &_player_1, mut player_state_1, mut _health_1, &player_1_side) in player_1_query.iter_mut() {
+        for (&transform_2, &_player_2, mut player_state_2, mut _health_2, &player_2_side) in player_2_query.iter_mut() {
             
             player_state_1.is_colliding = false;
             player_state_2.is_colliding = false;
@@ -85,7 +85,7 @@ pub fn collision_system(
                             
                             match player_state_1.player_state {
                                 PlayerStateEnum::Idle => {
-                                    player_state_1.x_velocity = -1.0f32;
+                                    player_state_1.x_velocity = PLAYER_SPEED * player_1_side.back_direction();
                                 },
                                 PlayerStateEnum::Attack1 => {
         
@@ -94,7 +94,7 @@ pub fn collision_system(
                             }
                             match player_state_2.player_state {
                                 PlayerStateEnum::Idle => {
-                                    player_state_2.x_velocity = 1.0f32;
+                                    player_state_2.x_velocity = PLAYER_SPEED * player_2_side.back_direction();
                                 },
                                 PlayerStateEnum::Attack1 => {
         

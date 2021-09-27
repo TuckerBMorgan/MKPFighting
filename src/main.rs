@@ -15,7 +15,9 @@ use crate::systems::*;
 
 #[derive(Default)]
 pub struct TextureAtlasDictionary {
-    animation_handles: HashMap<String, Handle<TextureAtlas>>
+    pub animation_handles: HashMap<String, Handle<TextureAtlas>>,
+    pub debug_hit_box_texture: Handle<ColorMaterial>,
+    pub debug_hurt_box_texture: Handle<ColorMaterial>
 }
 
 
@@ -31,12 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut p2p_sess = P2PSession::new(2, INPUT_SIZE, opt.local_port)?;
     p2p_sess.set_sparse_saving(true)?;
     p2p_sess.set_fps(FPS).expect("Invalid fps");
-    /*
-    let fake_collider_set = ColliderSetComponent::fake_one();
-    let serialized = serde_json::to_string(&fake_collider_set).unwrap();
-    println!("{}", serialized);
-    Ok(())
-    */
+
     let collider_both = Path::new("./assets/hitboxes/character_1.json");
     App::new()
         .add_plugins(DefaultPlugins)
@@ -45,8 +42,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .insert_resource(ColliderSetComponent::from_file(&collider_both))
         .insert_resource(InputEvents::default())
         .insert_resource(TextureAtlasDictionary::default())
+        .insert_resource(ShouldRenderHitBoxes::default())
         .add_startup_system(start_p2p_session)
         .add_startup_system(setup)
+        .add_startup_system(hit_box_setup_system)
         .register_rollback_type::<Transform>()
         .register_rollback_type::<PlayerState>()
         .with_input_system(keyboard_input_system.system())
@@ -55,6 +54,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_p2p_session(p2p_sess)
         .add_system(sprite_timers)
         .add_system(collision_system)
+        .add_system(screen_side_system)
+        .add_system(hit_box_setup_system)
         .run();
     Ok(())
     
@@ -65,13 +66,13 @@ fn sprite_timers(
     mut commands: Commands,
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>, Entity, &mut PlayerState)>,
+    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>, Entity, &mut PlayerState, &ScreenSideEnum)>,
     res_test: Res<TextureAtlasDictionary>
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle, entity, mut player_state) in query.iter_mut() {
+    for (mut timer, mut sprite, texture_atlas_handle, entity, mut player_state, &screen_side) in query.iter_mut() {
         timer.tick(time.delta());
         let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
-        match player_state.screen_side {
+        match screen_side {
             ScreenSideEnum::Left => {
                 sprite.flip_x = false;
             },
@@ -186,6 +187,7 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut rip: ResMut<RollbackIdProvider>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
     mut texture_atlas_handles: ResMut<TextureAtlasDictionary>,
     p2p_session: Option<Res<P2PSession>>,
 ) {
@@ -197,17 +199,26 @@ fn setup(
 
     let num_players = p2p_session
         .map(|s| s.num_players()).expect("No GGRS session found");
+    
+    //Spawn the background image, simply fire and forget
+    let background_texture_handle = asset_server.load("sprites/background_bar.png");
+    let mut background_transform = Transform::from_translation(Vec3::new(0.0, 0.0, 0.0));
+    background_transform.scale.x = 0.8;
+    background_transform.scale.y = 0.8;
 
+    commands.spawn_bundle(SpriteBundle {
+        material: materials.add(background_texture_handle.into()),
+        transform: background_transform,
+        ..Default::default()
+    });
+
+    //Spawn each player
     for i in 0..num_players {
         if i == 0 {
             commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-            let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), 0.0, 0.0));
+            let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), FLOOR_HEIGHT, 0.0));
             p1_transform.scale.x = 2.0;
             p1_transform.scale.y = 2.0;
-            let mut side = ScreenSideEnum::Right;
-            if i == 0 {
-                side = ScreenSideEnum::Left;
-            }
             commands
                 .spawn_bundle(SpriteSheetBundle {
                     texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
@@ -215,19 +226,18 @@ fn setup(
                     ..Default::default()
                 })
                 .insert(Timer::from_seconds(0.1, true))
-                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle, side))
+                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle))
                 .insert(Rollback::new(rip.next_id()))
-                .insert(Player1::default());
+                .insert(Player1::default())
+                .insert(PlayerHealth::default())
+                .insert(ScreenSideEnum::Left);
         }
         else {
             commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-            let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), 0.0, 0.0));
+            let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), FLOOR_HEIGHT, 0.0));
             p1_transform.scale.x = 2.0;
             p1_transform.scale.y = 2.0;
-            let mut side = ScreenSideEnum::Right;
-            if i == 0 {
-                side = ScreenSideEnum::Left;
-            }
+
             commands
                 .spawn_bundle(SpriteSheetBundle {
                     texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
@@ -235,9 +245,11 @@ fn setup(
                     ..Default::default()
                 })
                 .insert(Timer::from_seconds(0.1, true))
-                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle, side))
+                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle))
                 .insert(Rollback::new(rip.next_id()))
-                .insert(Player2::default());
+                .insert(Player2::default())
+                .insert(PlayerHealth::default())
+                .insert(ScreenSideEnum::Right);
         }
     }
 }

@@ -47,24 +47,16 @@ impl Default for PlayerStateEnum {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Debug, Hash, Reflect)]
-#[reflect(Hash)]
-pub enum ScreenSideEnum {
-    Left,
-    Right
-}
 
-impl Default for ScreenSideEnum {
-    fn default() -> ScreenSideEnum {
-        ScreenSideEnum::Left
-    }
+#[derive(Default)]
+pub struct PlayerHealth {
+    health: usize
 }
 
 #[derive(Default, Reflect, Copy, Clone)]
 pub struct PlayerState {
     pub player_id: usize,
     pub player_state: PlayerStateEnum,
-    pub screen_side: ScreenSideEnum,
     pub current_sprite_index: usize,
     pub x_velocity: f32,
     pub y_velocity: f32,
@@ -73,11 +65,10 @@ pub struct PlayerState {
 
 impl PlayerState {
 
-    pub fn new(player_id: usize, player_state: PlayerStateEnum, screen_side: ScreenSideEnum) -> PlayerState {
+    pub fn new(player_id: usize, player_state: PlayerStateEnum, ) -> PlayerState {
         PlayerState {
             player_id,
             player_state,
-            screen_side,
             current_sprite_index: 0,
             x_velocity: 0.0f32,
             y_velocity: 0.0f32,

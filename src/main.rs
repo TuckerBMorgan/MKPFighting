@@ -50,12 +50,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_rollback_type::<PlayerState>()
         .with_input_system(keyboard_input_system.system())
         .add_rollback_system(player_movement_system)
+        .add_rollback_system(hitbox_debug_system)
         .add_rollback_system(player_state_system)
         .with_p2p_session(p2p_sess)
         .add_system(sprite_timers)
         .add_system(collision_system)
         .add_system(screen_side_system)
-        .add_system(hit_box_setup_system)
+        .add_system(health_system_ui)
         .run();
     Ok(())
     
@@ -109,6 +110,10 @@ fn sprite_timers(
                     PlayerStateEnum::Fall => {
                         commands.entity(entity).remove::<Handle<TextureAtlas>>();
                         commands.entity(entity).insert(res_test.animation_handles["sprites/Fall.png"].clone());
+                    },
+                    PlayerStateEnum::TakeHit => {
+                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
+                        commands.entity(entity).insert(res_test.animation_handles["sprites/TakeHit.png"].clone());
                     }
                 }
                 continue;
@@ -196,6 +201,7 @@ fn setup(
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Jump.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 2);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Attack1.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 6);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Fall.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 2);
+    load_sprite_atlas_into_texture_dictionary(String::from("sprites/TakeHit.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 4);
 
     let num_players = p2p_session
         .map(|s| s.num_players()).expect("No GGRS session found");
@@ -205,21 +211,24 @@ fn setup(
     let mut background_transform = Transform::from_translation(Vec3::new(0.0, 0.0, 0.0));
     background_transform.scale.x = 0.8;
     background_transform.scale.y = 0.8;
-
+    
     commands.spawn_bundle(SpriteBundle {
         material: materials.add(background_texture_handle.into()),
         transform: background_transform,
         ..Default::default()
     });
-
+    
+    
+    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     //Spawn each player
     for i in 0..num_players {
+
         if i == 0 {
-            commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+
             let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), FLOOR_HEIGHT, 0.0));
             p1_transform.scale.x = 2.0;
             p1_transform.scale.y = 2.0;
-            commands
+            let entity_id = commands
                 .spawn_bundle(SpriteSheetBundle {
                     texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
                     transform:p1_transform,
@@ -229,16 +238,26 @@ fn setup(
                 .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle))
                 .insert(Rollback::new(rip.next_id()))
                 .insert(Player1::default())
-                .insert(PlayerHealth::default())
-                .insert(ScreenSideEnum::Left);
+                .insert(ScreenSideEnum::Left)
+                .insert(PlayerHealth::new()).id().clone();
+            
+            let hitbox_texture_handle = asset_server.load("sprites/health_bar.png");
+            let mut health_transform = Transform::from_translation(Vec3::new(-400.0, HEALTH_UI_HEIGHT, 1.0));
+            health_transform.scale = Vec3::new(400.0, 50.0, 1.0);
+            commands.spawn_bundle(SpriteBundle {
+                material: materials.add(hitbox_texture_handle.into()),
+                transform: health_transform,
+                ..Default::default()
+            }).insert(PlayerHealthUI::new(entity_id));
+            
         }
         else {
-            commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+
             let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), FLOOR_HEIGHT, 0.0));
             p1_transform.scale.x = 2.0;
             p1_transform.scale.y = 2.0;
 
-            commands
+            let entity_id = commands
                 .spawn_bundle(SpriteSheetBundle {
                     texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
                     transform:p1_transform,
@@ -248,8 +267,17 @@ fn setup(
                 .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle))
                 .insert(Rollback::new(rip.next_id()))
                 .insert(Player2::default())
-                .insert(PlayerHealth::default())
-                .insert(ScreenSideEnum::Right);
+                .insert(PlayerHealth::new())
+                .insert(ScreenSideEnum::Right).id().clone();
+
+            let hitbox_texture_handle = asset_server.load("sprites/health_bar.png");
+            let mut health_transform = Transform::from_translation(Vec3::new(400.0, HEALTH_UI_HEIGHT, 1.0));
+            health_transform.scale = Vec3::new(400.0, 50.0, 1.0);
+            commands.spawn_bundle(SpriteBundle {
+                material: materials.add(hitbox_texture_handle.into()),
+                transform: health_transform,
+                ..Default::default()
+            }).insert(PlayerHealthUI::new(entity_id));
         }
     }
 }

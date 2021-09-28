@@ -18,7 +18,7 @@ pub fn hit_box_setup_system(
     mut texture_handles: ResMut<TextureAtlasDictionary>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-
+    
     let hitbox_texture_handle = asset_server.load("sprites/hitbox.png");
     let hurtbox_texture_handle = asset_server.load("sprites/hurtbox.png");
     texture_handles.debug_hit_box_texture = materials.add(hitbox_texture_handle.clone().into());
@@ -38,11 +38,11 @@ pub fn hit_box_setup_system(
 
 pub fn hitbox_debug_system(
     mut commands: Commands,
-    mut should_render_hit_box: ResMut<ShouldRenderHitBoxes>,
+    should_render_hit_box: ResMut<ShouldRenderHitBoxes>,
     collider_set_component: Res<ColliderSetComponent>,
-    mut texture_handles: ResMut<TextureAtlasDictionary>,
-    mut debug_query: Query<(&mut Transform, &DebugBox, Entity)>,
-    player_query: Query<&PlayerState>
+    texture_handles: ResMut<TextureAtlasDictionary>,
+    mut debug_query: Query<(&mut Transform, &DebugBox, Entity), Without<PlayerState>>,
+    player_query: Query<(&PlayerState, &Transform, &ScreenSideEnum), Without<DebugBox>>
 ) {
     
     if true || should_render_hit_box.should_render {
@@ -53,7 +53,7 @@ pub fn hitbox_debug_system(
 
         let mut debug_iter = debug_query.iter_mut();
 
-        for &player_state in player_query.iter() {
+        for (&player_state, &player_transform, &screen_side) in player_query.iter() {
             let frame_colliders = &collider_set_component.colliders[&player_state.player_state.to_string()][player_state.current_sprite_index];
             for collider in frame_colliders {
                 let (mut transform, &_debug_box, entity) = debug_iter.next().unwrap();
@@ -66,12 +66,20 @@ pub fn hitbox_debug_system(
                         texture_handle = texture_handles.debug_hurt_box_texture.clone();
                     }
                 }
-    
-                transform.translation = collider.offset;
+                let mut right_side_inverse = 1.0f32;
+                match screen_side {
+                    ScreenSideEnum::Right => {
+                        right_side_inverse = -1.0f32;
+                    },
+                    _ => {}
+                }
+
+                let mut collider_offset = collider.offset.clone();
+                collider_offset.x = collider_offset.x * right_side_inverse;
+                transform.translation = collider_offset + player_transform.translation;
                 transform.scale.x = collider.dimension.x;
                 transform.scale.y = collider.dimension.y;
-                transform.translation.z = 0.0f32;
-           //     commands.entity(entity).insert(texture_handle);        
+                commands.entity(entity).insert(texture_handle);        
             }
         }
     }

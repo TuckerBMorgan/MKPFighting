@@ -11,7 +11,8 @@ pub enum PlayerStateEnum {
     Run,
     Jump,
     Attack1,
-    Fall
+    Fall,
+    TakeHit
 }
 
 impl PlayerStateEnum {
@@ -31,6 +32,9 @@ impl PlayerStateEnum {
             },
             PlayerStateEnum::Fall => {
                 String::from("Fall")
+            },
+            PlayerStateEnum::TakeHit => {
+                String::from("TakeHit")
             }
         }
     }
@@ -48,10 +52,6 @@ impl Default for PlayerStateEnum {
 }
 
 
-#[derive(Default)]
-pub struct PlayerHealth {
-    health: usize
-}
 
 #[derive(Default, Reflect, Copy, Clone)]
 pub struct PlayerState {
@@ -94,12 +94,15 @@ impl PlayerState {
             },
             PlayerStateEnum::Fall => {
                 //For now, keep it in this, but techianlly a "Landed" state would be a valid transtion for this
+            },
+            PlayerStateEnum::TakeHit => {
+                
             }
         }
         return copy_of_initial_state != self.player_state;
     }
 
-    pub fn animation_finished(&mut self) -> PlayerStateEnum{
+    pub fn animation_finished(&mut self) -> PlayerStateEnum {
         match self.player_state {
             PlayerStateEnum::Idle => {
                 PlayerStateEnum::Idle
@@ -115,6 +118,9 @@ impl PlayerState {
             },
             PlayerStateEnum::Fall => {
                 PlayerStateEnum::Fall
+            },
+            PlayerStateEnum::TakeHit => {
+                PlayerStateEnum::Idle
             }
         }
     }
@@ -166,10 +172,14 @@ pub fn player_state_system(
                 PlayerStateEnum::Attack1 => {
                     commands.entity(entity).remove::<Handle<TextureAtlas>>();
                     commands.entity(entity).insert(res_test.animation_handles["sprites/Attack1.png"].clone());
-                }
+                },
                 PlayerStateEnum::Fall => {
                     commands.entity(entity).remove::<Handle<TextureAtlas>>();
                     commands.entity(entity).insert(res_test.animation_handles["sprites/Fall.png"].clone());
+                },
+                PlayerStateEnum::TakeHit => {
+                    commands.entity(entity).remove::<Handle<TextureAtlas>>();
+                    commands.entity(entity).insert(res_test.animation_handles["sprites/TakeHit.png"].clone());
                 }
             }
         }

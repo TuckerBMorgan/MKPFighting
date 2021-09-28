@@ -1,12 +1,10 @@
 use std::collections::HashMap;
 use std::path::Path;
-use std::ffi::OsStr;
 use std::fs;
 
 use bevy::prelude::*;
 use bevy::sprite::collide_aabb::{collide};
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
 use crate::systems::*;
 
 
@@ -59,12 +57,12 @@ impl Collider {
         }
     }
 }
+
 pub fn collision_system(
     collider_boxes: Res<ColliderSetComponent>,
     mut player_1_query: Query<(&Transform, &Player1, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum), Without<Player2>>,
-    mut player_2_query: Query<(&Transform, &Player2, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum), Without<Player1>>) {
+    mut player_2_query: Query<(&Transform, &Player2, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum), Without<Player1>>) {        
     
-        
     for (&transform_1, &_player_1, mut player_state_1, mut _health_1, &player_1_side) in player_1_query.iter_mut() {
         for (&transform_2, &_player_2, mut player_state_2, mut _health_2, &player_2_side) in player_2_query.iter_mut() {
             
@@ -73,9 +71,32 @@ pub fn collision_system(
 
             let p1_colliders = &collider_boxes.colliders[&player_state_1.player_state.to_string()][player_state_1.current_sprite_index];
             let p2_colliders = &collider_boxes.colliders[&player_state_2.player_state.to_string()][player_state_2.current_sprite_index];
+            let mut player_1_should_inverse = 1.0f32;
+            match player_1_side {
+                ScreenSideEnum::Right => {
+                    player_1_should_inverse = -1.0f32;
+                },
+                _ => {}
+            }
+
+            let mut player_2_should_inverse = 1.0f32;
+            match player_2_side {
+                ScreenSideEnum::Right => {
+                    player_2_should_inverse = -1.0f32;
+                },
+                _ => {}
+            }
+
+
             for collider_1 in p1_colliders {
                 for collider_2 in p2_colliders {
-                    let collision = collide(transform_1.translation + collider_1.offset, collider_1.dimension, transform_2.translation + collider_2.offset, collider_2.dimension);
+
+                    let mut collider_1_offset = collider_1.offset.clone();
+                    collider_1_offset.x = collider_1_offset.x * player_1_should_inverse;
+                    let mut collider_2_offset = collider_2.offset.clone();
+                    collider_2_offset.x = collider_2_offset.x * player_2_should_inverse;
+
+                    let collision = collide(transform_1.translation + collider_1_offset, collider_1.dimension, transform_2.translation + collider_2_offset, collider_2.dimension);
 
                     match collision {
                         Some(_) => {
@@ -106,7 +127,6 @@ pub fn collision_system(
                     }
                 }
             }
-        
         }
     }
 }

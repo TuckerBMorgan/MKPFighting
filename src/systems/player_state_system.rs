@@ -124,6 +124,10 @@ impl PlayerState {
             }
         }
     }
+
+    pub fn can_take_a_hit(&self) -> bool {
+        return self.player_state != PlayerStateEnum::TakeHit;
+    }
 }
 
 pub fn player_state_system(

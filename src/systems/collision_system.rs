@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use bevy::sprite::collide_aabb::{collide};
 use serde::{Deserialize, Serialize};
 use crate::systems::*;
-
+use crate::*;
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct ColliderSetComponent {
@@ -34,7 +34,7 @@ impl ColliderSetComponent {
 }
 
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub enum ColliderType {
     HitBox,
     HurtBox
@@ -58,13 +58,33 @@ impl Collider {
     }
 }
 
+struct ColliderEvent {
+    collider_type_1: ColliderType,
+    collider_type_2: ColliderType
+}
+
+impl ColliderEvent {
+    pub fn new(    
+        collider_type_1: ColliderType,
+        collider_type_2: ColliderType
+    ) -> ColliderEvent {
+
+        ColliderEvent {
+            collider_type_1,
+            collider_type_2
+        }
+    }
+}
+
 pub fn collision_system(
+    mut commands: Commands,
     collider_boxes: Res<ColliderSetComponent>,
-    mut player_1_query: Query<(&Transform, &Player1, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum), Without<Player2>>,
-    mut player_2_query: Query<(&Transform, &Player2, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum), Without<Player1>>) {        
+    res_test: Res<TextureAtlasDictionary>,
+    mut player_1_query: Query<(&Transform, &Player1, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum, Entity), Without<Player2>>,
+    mut player_2_query: Query<(&Transform, &Player2, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum, Entity), Without<Player1>>) {        
     
-    for (&transform_1, &_player_1, mut player_state_1, mut _health_1, &player_1_side) in player_1_query.iter_mut() {
-        for (&transform_2, &_player_2, mut player_state_2, mut _health_2, &player_2_side) in player_2_query.iter_mut() {
+    for (&transform_1, &_player_1, mut player_state_1, mut health_1, &player_1_side, entity_1) in player_1_query.iter_mut() {
+        for (&transform_2, &_player_2, mut player_state_2, mut health_2, &player_2_side, entity_2) in player_2_query.iter_mut() {
             
             player_state_1.is_colliding = false;
             player_state_2.is_colliding = false;
@@ -87,6 +107,9 @@ pub fn collision_system(
                 _ => {}
             }
 
+            let mut parries = vec![];
+            let mut strikes = vec![];
+            let mut bounces = vec![];
 
             for collider_1 in p1_colliders {
                 for collider_2 in p2_colliders {
@@ -100,32 +123,75 @@ pub fn collision_system(
 
                     match collision {
                         Some(_) => {
-                            player_state_1.is_colliding = true;
-                            player_state_2.is_colliding = true;
-        
-                            
-                            match player_state_1.player_state {
-                                PlayerStateEnum::Idle => {
-                                    player_state_1.x_velocity = PLAYER_SPEED * player_1_side.back_direction();
-                                },
-                                PlayerStateEnum::Attack1 => {
-        
-                                },
-                                _ => {}
+                            let collision_event = ColliderEvent::new(collider_1.collider_type, collider_2.collider_type);
+                            if collider_1.collider_type != collider_2.collider_type {
+                                strikes.push(collision_event);
                             }
-                            match player_state_2.player_state {
-                                PlayerStateEnum::Idle => {
-                                    player_state_2.x_velocity = PLAYER_SPEED * player_2_side.back_direction();
-                                },
-                                PlayerStateEnum::Attack1 => {
-        
-                                },
-                                _ => {}
+                            else if collider_1.collider_type == ColliderType::HitBox {
+                                bounces.push(collision_event);
+                            }
+                            else {
+                                parries.push(collision_event);
                             }
                         },
                         None => {}
                     }
                 }
+            }
+
+            //If we have any collision there are three possible outcomes we care about
+            //1. Only hit box collisions, just means we need to handle bumping and pushing
+            //2. At least 1 hurt box has hit a hit box, we need to do damage, and sent that player into the taken hit state
+            //3. Two hurt boxes have hit, this is a "parry", meaning that they bounce off each other
+            if parries.len() > 0 {
+
+            }
+
+            if strikes.len() > 0 {
+                let first_event = &strikes[0];
+                if first_event.collider_type_1 == ColliderType::HitBox {
+                    if player_state_1.can_take_a_hit() {
+                        health_1.health -= 10;
+                        player_state_1.player_state = PlayerStateEnum::TakeHit;
+                        commands.entity(entity_1).remove::<Handle<TextureAtlas>>();
+                        commands.entity(entity_1).insert(res_test.animation_handles["sprites/TakeHit.png"].clone());
+                        player_state_1.x_velocity = PLAYER_SPEED * 1.5f32 * player_1_side.back_direction();
+                        player_state_1.current_sprite_index = 0;
+                    }
+                }
+                else if player_state_2.can_take_a_hit(){
+                    health_2.health -= 10;
+                    player_state_2.player_state = PlayerStateEnum::TakeHit;
+                    commands.entity(entity_2).remove::<Handle<TextureAtlas>>();
+                    commands.entity(entity_2).insert(res_test.animation_handles["sprites/TakeHit.png"].clone());
+                    player_state_2.x_velocity = PLAYER_SPEED * 1.5f32 * player_2_side.back_direction();
+                    player_state_2.current_sprite_index = 0;
+                }
+            }
+
+            if bounces.len() > 0 {
+                player_state_1.is_colliding = true;
+                player_state_2.is_colliding = true;
+
+                match player_state_1.player_state {
+                    PlayerStateEnum::Idle => {
+                        player_state_1.x_velocity = PLAYER_SPEED * player_1_side.back_direction();
+                    },
+                    PlayerStateEnum::Attack1 => {
+
+                    },
+                    _ => {}
+                }
+                match player_state_2.player_state {
+                    PlayerStateEnum::Idle => {
+                        player_state_2.x_velocity = PLAYER_SPEED * player_2_side.back_direction();
+                    },
+                    PlayerStateEnum::Attack1 => {
+
+                    },
+                    _ => {}
+                }
+                
             }
         }
     }

@@ -199,7 +199,7 @@ pub fn player_state_system(
                 },
                 PlayerStateEnum::Run => {
                     next_animation = "sprites/Run.png";
-                    player_state.x_velocity = PLAYER_SPEED * screen_side.back_direction() * input.left_right_axis as f32;
+                    player_state.x_velocity = PLAYER_SPEED * input.left_right_axis as f32;
                 },
                 PlayerStateEnum::Jump => {
                     next_animation = "sprites/Jump.png";
@@ -207,6 +207,7 @@ pub fn player_state_system(
                 },
                 PlayerStateEnum::Attack1 => {
                     next_animation = "sprites/Attack1.png";
+                    player_state.x_velocity = 0.0;
                 }
                 PlayerStateEnum::Fall => {
                     next_animation = "sprites/Fall.png";

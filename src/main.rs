@@ -64,13 +64,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
 fn sprite_system(
-    mut commands: Commands,
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>, Entity, &mut PlayerState, &ScreenSideEnum)>,
-    res_test: Res<TextureAtlasDictionary>
+    mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>, &mut PlayerState, &ScreenSideEnum)>
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle, entity, mut player_state, &screen_side) in query.iter_mut() {
+    for (mut timer, mut sprite, texture_atlas_handle, mut player_state, &screen_side) in query.iter_mut() {
         timer.tick(time.delta());
         let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
         match screen_side {

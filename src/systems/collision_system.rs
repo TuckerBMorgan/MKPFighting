@@ -6,7 +6,6 @@ use bevy::prelude::*;
 use bevy::sprite::collide_aabb::{collide};
 use serde::{Deserialize, Serialize};
 use crate::systems::*;
-use crate::*;
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct ColliderSetComponent {
@@ -18,18 +17,6 @@ impl ColliderSetComponent {
         let file_contents = fs::read_to_string(path).unwrap();
         let deserialized: ColliderSetComponent = serde_json::from_str(&file_contents).unwrap();
         return deserialized;
-    }
-
-    pub fn fake_one() -> ColliderSetComponent {
-        let collider = Collider::new(Vec3::new(1.0, 2.0, 3.0), Vec2::new(0.0, -10.0), ColliderType::HitBox);
-        let inner = vec![collider];
-        let outer = vec![inner];
-        let mut maps = HashMap::new();
-
-        maps.insert(String::from("Idle"), outer);
-        ColliderSetComponent {
-            colliders: maps
-        }
     }
 }
 
@@ -47,16 +34,6 @@ pub struct Collider {
     pub collider_type: ColliderType
 }
 
-
-impl Collider {
-    pub fn new(offset: Vec3, dimension: Vec2, collider_type: ColliderType) -> Collider {
-        Collider {
-            offset,
-            dimension,
-            collider_type
-        }
-    }
-}
 
 struct ColliderEvent {
     collider_type_1: ColliderType,
@@ -77,14 +54,12 @@ impl ColliderEvent {
 }
 
 pub fn collision_system(
-    mut commands: Commands,
     collider_boxes: Res<ColliderSetComponent>,
-    res_test: Res<TextureAtlasDictionary>,
-    mut player_1_query: Query<(&Transform, &Player1, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum, Entity), Without<Player2>>,
-    mut player_2_query: Query<(&Transform, &Player2, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum, Entity), Without<Player1>>) {        
+    mut player_1_query: Query<(&Transform, &Player1, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum), Without<Player2>>,
+    mut player_2_query: Query<(&Transform, &Player2, &mut PlayerState, &mut PlayerHealth, &ScreenSideEnum), Without<Player1>>) {        
     
-    for (&transform_1, &_player_1, mut player_state_1, mut health_1, &player_1_side, entity_1) in player_1_query.iter_mut() {
-        for (&transform_2, &_player_2, mut player_state_2, mut health_2, &player_2_side, entity_2) in player_2_query.iter_mut() {
+    for (&transform_1, &_player_1, mut player_state_1, mut health_1, &player_1_side) in player_1_query.iter_mut() {
+        for (&transform_2, &_player_2, mut player_state_2, mut health_2, &player_2_side) in player_2_query.iter_mut() {
             
             player_state_1.is_colliding = false;
             player_state_2.is_colliding = false;

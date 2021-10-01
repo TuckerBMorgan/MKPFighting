@@ -191,7 +191,7 @@ pub fn player_state_system(
         if player_state.attempt_to_transition_state() || player_state.state_is_dirty {
             sprite.index = 0;
             player_state.current_sprite_index = 0;
-            let mut next_animation = "";
+            let next_animation;
             match player_state.desired_player_state {
                 PlayerStateEnum::Idle => {
                     next_animation = "sprites/Idle.png";

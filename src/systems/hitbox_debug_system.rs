@@ -45,7 +45,7 @@ pub fn hitbox_debug_system(
     player_query: Query<(&PlayerState, &Transform, &ScreenSideEnum), Without<DebugBox>>
 ) {
     
-    if true || should_render_hit_box.should_render {
+    if should_render_hit_box.should_render {
         // move all of the current hit boxes away from the middle of the screen, not great but EH
         for (mut t, _, _) in debug_query.iter_mut() {
             t.translation = Vec3::new(1000.0, 1000.0, 1000.0);

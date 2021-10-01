@@ -12,22 +12,21 @@ pub fn player_movement_system(
 ) {
     for (mut transform, mut player_state) in query.iter_mut() {
         let input = InputEvents::from_input_vector(&inputs, player_state.player_id);
-        transform.translation += Vec3::new(player_state.x_velocity, player_state.y_velocity, 0.0);// * input.left_right_axis as f32;
+        transform.translation += Vec3::new(player_state.x_velocity, player_state.y_velocity, 0.0);// *  as f32;
 
         match player_state.player_state {
             PlayerStateEnum::Run => {
-                transform.translation += Vec3::new(PLAYER_SPEED, 0.0, 0.0) * input.left_right_axis as f32;
             },
             PlayerStateEnum::Jump => {
                 player_state.y_velocity -= GRAVITY;
                 if player_state.y_velocity < 0.0f32 {
-                    player_state.player_state = PlayerStateEnum::Fall;
+                    player_state.set_player_state_to_transition(PlayerStateEnum::Fall);
                 }
             },
             PlayerStateEnum::Fall => {
                 player_state.y_velocity -= GRAVITY;
                 if transform.translation.y < FLOOR_HEIGHT {
-                    player_state.player_state = PlayerStateEnum::Idle;
+                    player_state.set_player_state_to_transition(PlayerStateEnum::Idle);
                     player_state.y_velocity = 0.0f32;
                     transform.translation.y = FLOOR_HEIGHT;
                 }
@@ -37,6 +36,12 @@ pub fn player_movement_system(
                     player_state.x_velocity = 0.0f32;
                 }
             },
+            PlayerStateEnum::Death => {
+                if transform.translation.y < FLOOR_HEIGHT {
+                    player_state.y_velocity = 0.0f32;
+                    transform.translation.y = FLOOR_HEIGHT;
+                }
+            }
             _ => {}
         }
     }

@@ -145,31 +145,20 @@ pub fn collision_system(
             //3. Two hurt boxes have hit, this is a "parry", meaning that they bounce off each other
             if parries.len() > 0 {
 
-            }
-
-            if strikes.len() > 0 {
+            } else if strikes.len() > 0 {
                 let first_event = &strikes[0];
                 if first_event.collider_type_1 == ColliderType::HitBox {
                     if player_state_1.can_take_a_hit() {
-                        health_1.health -= 10;
-                        player_state_1.player_state = PlayerStateEnum::TakeHit;
-                        commands.entity(entity_1).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity_1).insert(res_test.animation_handles["sprites/TakeHit.png"].clone());
-                        player_state_1.x_velocity = PLAYER_SPEED * 1.5f32 * player_1_side.back_direction();
-                        player_state_1.current_sprite_index = 0;
+                        health_1.take_damage(10);
+                        player_state_1.set_player_state_to_transition(PlayerStateEnum::TakeHit);
                     }
                 }
-                else if player_state_2.can_take_a_hit(){
-                    health_2.health -= 10;
-                    player_state_2.player_state = PlayerStateEnum::TakeHit;
-                    commands.entity(entity_2).remove::<Handle<TextureAtlas>>();
-                    commands.entity(entity_2).insert(res_test.animation_handles["sprites/TakeHit.png"].clone());
-                    player_state_2.x_velocity = PLAYER_SPEED * 1.5f32 * player_2_side.back_direction();
-                    player_state_2.current_sprite_index = 0;
+                else if player_state_2.can_take_a_hit() {
+                    health_2.take_damage(10);
+                    player_state_2.set_player_state_to_transition(PlayerStateEnum::TakeHit);
                 }
-            }
-
-            if bounces.len() > 0 {
+                
+            } else if bounces.len() > 0 {
                 player_state_1.is_colliding = true;
                 player_state_2.is_colliding = true;
 

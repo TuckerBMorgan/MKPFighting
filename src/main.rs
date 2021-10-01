@@ -53,7 +53,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_rollback_system(hitbox_debug_system)
         .add_rollback_system(player_state_system)
         .with_p2p_session(p2p_sess)
-        .add_system(sprite_timers)
+        .add_system(sprite_system)
         .add_system(collision_system)
         .add_system(screen_side_system)
         .add_system(health_system_ui)
@@ -63,7 +63,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 
-fn sprite_timers(
+fn sprite_system(
     mut commands: Commands,
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
@@ -87,34 +87,11 @@ fn sprite_timers(
             //As we start it at 0, we should let the system know "we have finished playing a full animation cycle, who wants next"
             if next == 0 {
                 let desired_state = player_state.animation_finished();
-                player_state.player_state = desired_state;
-                sprite.index = 0;
-                player_state.current_sprite_index = 0;
-                match player_state.player_state {
-                    PlayerStateEnum::Idle => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Idle.png"].clone());
-                    },
-                    PlayerStateEnum::Run => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Run.png"].clone());
-                    },
-                    PlayerStateEnum::Jump => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Jump.png"].clone());
-                    },
-                    PlayerStateEnum::Attack1 => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Attack1.png"].clone());
-                    }
-                    PlayerStateEnum::Fall => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/Fall.png"].clone());
-                    },
-                    PlayerStateEnum::TakeHit => {
-                        commands.entity(entity).remove::<Handle<TextureAtlas>>();
-                        commands.entity(entity).insert(res_test.animation_handles["sprites/TakeHit.png"].clone());
-                    }
+                if desired_state == player_state.player_state {
+                    player_state.reset_state();
+                }
+                else {
+                    player_state.set_player_state_to_transition(desired_state);
                 }
                 continue;
             }
@@ -202,6 +179,7 @@ fn setup(
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Attack1.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 6);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Fall.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 2);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/TakeHit.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 4);
+    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Death.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 6);
 
     let num_players = p2p_session
         .map(|s| s.num_players()).expect("No GGRS session found");

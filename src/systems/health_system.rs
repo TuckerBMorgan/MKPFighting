@@ -13,6 +13,17 @@ impl PlayerHealth {
             health: 100
         }
     }
+    
+    pub fn take_damage(&mut self, amount: usize) -> bool{
+        if amount > self.health {
+            self.health = 0;
+            return true;
+        }
+        else {
+            self.health -= amount;
+            return false;
+        }
+    }
 }
 
 #[derive(Default, Copy, Clone)]
@@ -30,10 +41,13 @@ impl PlayerHealthUI {
 
 pub fn health_system_ui(
     mut health_query: Query<(&mut Transform, &PlayerHealthUI)>,
-    mut players_query: Query<&PlayerHealth>
+    mut players_query: Query<(&PlayerHealth, &mut PlayerState)>
 ) {
     for (mut transform, &health_ui) in health_query.iter_mut() {
-        let player_health = players_query.get(health_ui.entity.unwrap()).unwrap();
+        let (player_health, mut player_state) = players_query.get_mut(health_ui.entity.unwrap()).unwrap();
         transform.scale.x = player_health.health as f32 * 4.0f32;
+        if player_health.health == 0 {
+            player_state.set_player_state_to_transition(PlayerStateEnum::Death);
+        }
     }
 }

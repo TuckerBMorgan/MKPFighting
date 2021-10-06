@@ -55,7 +55,8 @@ impl Default for PlayerStateEnum {
     }
 }
 
-
+pub struct WinningPlayer {}
+pub struct LosingPlayer {}
 
 #[derive(Default, Reflect, Copy, Clone)]
 pub struct PlayerState {

@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use structopt::StructOpt;
 use std::path::Path;
 
-use bevy::{prelude::*};
+use bevy::{prelude::*, ecs::schedule::ShouldRun};
 use bevy_ggrs::{Rollback, RollbackIdProvider, GGRSApp, GGRSPlugin};
 use ggrs::{GameInput, PlayerType, P2PSession};
 
@@ -13,6 +13,15 @@ mod systems;
 use crate::systems::*;
 
 
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+pub enum GameState {
+    Setup,
+    Fighting,
+    Reset
+}
+
+
+
 #[derive(Default)]
 pub struct TextureAtlasDictionary {
     pub animation_handles: HashMap<String, Handle<TextureAtlas>>,
@@ -20,7 +29,8 @@ pub struct TextureAtlasDictionary {
     pub debug_hurt_box_texture: Handle<ColorMaterial>
 }
 
-
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
+pub struct PlayerSystem;
 
 const FPS: u32 = 60;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -39,6 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_plugins(DefaultPlugins)
         .add_plugin(GGRSPlugin)
         .insert_resource(opt)
+        .add_state(GameState::Setup)
         .insert_resource(ColliderSetComponent::from_file(&collider_both))
         .insert_resource(InputEvents::default())
         .insert_resource(TextureAtlasDictionary::default())
@@ -49,17 +60,61 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_rollback_type::<Transform>()
         .register_rollback_type::<PlayerState>()
         .with_input_system(keyboard_input_system.system())
-        .add_rollback_system(player_movement_system)
-        .add_rollback_system(hitbox_debug_system)
-        .add_rollback_system(player_state_system)
+
+        .add_rollback_system_set(SystemSet::new()
+            .label(PlayerSystem)
+            .with_run_criteria(game_is_fighting_state)
+            .with_system(collision_system)
+            .with_system(screen_side_system)
+            .with_system(health_system_ui)
+            .with_system(player_state_system)
+            .with_system(player_movement_system)
+            .with_system(hitbox_debug_system)
+        )
+        .add_rollback_system_set(SystemSet::new()
+            .label(RestartSystem)
+            .with_run_criteria(game_is_reset_state)
+            .with_system(restart_system)
+        )
         .with_p2p_session(p2p_sess)
         .add_system(sprite_system)
-        .add_system(collision_system)
-        .add_system(screen_side_system)
-        .add_system(health_system_ui)
+        
         .run();
     Ok(())
     
+}
+
+pub fn game_is_fighting_state(
+    mut state: ResMut<State<GameState>>,
+) -> ShouldRun {
+
+    match state.current() {
+        GameState::Setup => {
+            ShouldRun::No
+        },
+        GameState::Fighting => {
+            ShouldRun::Yes
+        }
+        GameState::Reset => {
+            ShouldRun::No
+        }
+    }
+}
+
+pub fn game_is_reset_state(
+    mut state: ResMut<State<GameState>>,
+) -> ShouldRun {
+    match state.current() {
+        GameState::Setup => {
+            ShouldRun::No
+        },
+        GameState::Fighting => {
+            ShouldRun::No
+        }
+        GameState::Reset => {
+            ShouldRun::Yes
+        }
+    }
 }
 
 
@@ -163,6 +218,7 @@ fn load_sprite_atlas_into_texture_dictionary(
 }
 
 fn setup(
+    mut state: ResMut<State<GameState>>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut rip: ResMut<RollbackIdProvider>,
@@ -187,18 +243,39 @@ fn setup(
     let mut background_transform = Transform::from_translation(Vec3::new(0.0, 0.0, 0.0));
     background_transform.scale.x = 0.8;
     background_transform.scale.y = 0.8;
-    
+
     commands.spawn_bundle(SpriteBundle {
         material: materials.add(background_texture_handle.into()),
         transform: background_transform,
         ..Default::default()
     });
+
+    for i in 0..2 {
+        let black_texture = asset_server.load("sprites/black.png");
+        let mut blind_transform = Transform::from_translation(Vec3::new(0.0, 560.0 + (i as f32 * -1220.0), 0.0));
+        blind_transform.scale.x = 1600.0;
+        blind_transform.scale.y = 400.02;
+
+        if i == 0 {
+            commands.spawn_bundle(SpriteBundle {
+                material: materials.add(black_texture.into()),
+                transform: blind_transform,
+                ..Default::default()
+            }).insert(LowerBlind::default());
+        }
+        else {
+            commands.spawn_bundle(SpriteBundle {
+                material: materials.add(black_texture.into()),
+                transform: blind_transform,
+                ..Default::default()
+            }).insert(UpperBlind::default());
+        }
+    }
     
     
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     //Spawn each player
     for i in 0..num_players {
-
         if i == 0 {
 
             let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), FLOOR_HEIGHT, 0.0));
@@ -256,4 +333,5 @@ fn setup(
             }).insert(PlayerHealthUI::new(entity_id));
         }
     }
+    state.set(GameState::Fighting).unwrap()
 }

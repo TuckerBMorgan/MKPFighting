@@ -6,10 +6,11 @@ pub const FLOOR_HEIGHT : f32 = -250.0f32;
 pub const PLAYER_SPEED : f32 = 5.0f32;
 
 pub fn player_movement_system(
+    time: Res<Time>,
     mut query: Query<(&mut Transform, &mut PlayerState)>,    
 ) {
     for (mut transform, mut player_state) in query.iter_mut() {
-        transform.translation += Vec3::new(player_state.x_velocity, player_state.y_velocity, 0.0);// *  as f32;
+        transform.translation += Vec3::new(player_state.x_velocity * time.delta_seconds() / (1.0f32 / 60.0f32), player_state.y_velocity * time.delta_seconds() / (1.0f32 / 60.0f32), 0.0);
 
         match player_state.player_state {
             PlayerStateEnum::Run => {

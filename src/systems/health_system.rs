@@ -3,7 +3,7 @@ use crate::systems::*;
 use crate::*;
 
 pub const HEALTH_UI_HEIGHT : f32 = 300.0f32;
-#[derive(Default)]
+#[derive(Default, Component)]
 pub struct PlayerHealth {
     pub health: usize
 }
@@ -31,7 +31,7 @@ impl PlayerHealth {
     }
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, Component)]
 pub struct PlayerHealthUI {
     entity: Option<Entity>
 }

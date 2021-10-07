@@ -2,10 +2,10 @@ use bevy::prelude::*;
 use crate::systems::*;
 use crate::*;
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel, Component)]
 pub struct RestartSystem;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Reflect)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Reflect, Component)]
 pub enum RestartSystemStateEnum {
     Blackout,
     OpenUp
@@ -17,19 +17,19 @@ impl Default for RestartSystemStateEnum{
     }
 }
 
-#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, Reflect)]
+#[derive(Debug, Default, Clone, Eq, PartialEq, Hash, Reflect, Component)]
 pub struct RestartSystemState {
     system_state: RestartSystemStateEnum
 }
 
 
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, Component)]
 pub struct UpperBlind {
 
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, Component)]
 pub struct LowerBlind {
 
 }

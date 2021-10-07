@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::systems::*;
 
-#[derive(PartialEq, Copy, Clone, Debug, Hash, Reflect)]
+#[derive(PartialEq, Copy, Clone, Debug, Hash, Reflect, Component)]
 #[reflect(Hash)]
 pub enum ScreenSideEnum {
     Left,

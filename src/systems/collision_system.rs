@@ -7,7 +7,7 @@ use bevy::sprite::collide_aabb::{collide};
 use serde::{Deserialize, Serialize};
 use crate::systems::*;
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize, Component)]
 pub struct ColliderSetComponent {
     pub colliders: HashMap<String, Vec<Vec<Collider>>>
 }
@@ -21,13 +21,13 @@ impl ColliderSetComponent {
 }
 
 
-#[derive(Copy, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Copy, Clone, Serialize, Deserialize, Eq, PartialEq, Component)]
 pub enum ColliderType {
     HitBox,
     HurtBox
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize, Component)]
 pub struct Collider {
     pub offset: Vec3,
     pub dimension: Vec2,

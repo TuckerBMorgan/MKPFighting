@@ -6,7 +6,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ggrs = { git = "https://github.com/gschup/ggrs", branch = "main"}
+ggrs = "0.5.1"#{ git = "https://github.com/gschup/ggrs", branch = "main"}
 bevy_ggrs = { git = "https://github.com/gschup/bevy_ggrs", branch = "main"}
 bevy = { git = "https://github.com/bevyengine/bevy", branch = "main"}
 structopt = { version = "0.3", default-features = false }

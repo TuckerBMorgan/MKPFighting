@@ -4,7 +4,7 @@ use crate::systems::*;
 use crate::*;
 
 
-#[derive(PartialEq, Copy, Clone, Debug, Hash, Reflect)]
+#[derive(PartialEq, Copy, Clone, Debug, Hash, Reflect, Component)]
 #[reflect(Hash)]
 pub enum PlayerStateEnum {
     Idle,
@@ -44,9 +44,9 @@ impl PlayerStateEnum {
     }
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, Component)]
 pub struct Player1;
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, Component)]
 pub struct Player2;
 
 impl Default for PlayerStateEnum {
@@ -56,7 +56,7 @@ impl Default for PlayerStateEnum {
 }
 
 
-#[derive(Default, Reflect, Copy, Clone)]
+#[derive(Default, Reflect, Copy, Clone, Component)]
 pub struct PlayerState {
     pub player_id: usize,
     pub player_state: PlayerStateEnum,

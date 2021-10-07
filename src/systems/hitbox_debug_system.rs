@@ -2,12 +2,12 @@ use bevy::prelude::*;
 use crate::systems::*;
 use crate::*;
 
-#[derive(Default)]
+#[derive(Default, Component)]
 pub struct ShouldRenderHitBoxes {
     should_render: bool
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Copy, Clone, Component)]
 pub struct DebugBox {
 
 }

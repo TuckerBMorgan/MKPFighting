@@ -13,7 +13,7 @@ mod systems;
 use crate::systems::*;
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Reflect)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Reflect, Component)]
 pub enum GameState {
     Setup,
     Fighting,
@@ -36,6 +36,7 @@ pub struct TextureAtlasDictionary {
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
 pub struct PlayerSystem;
+const ROLLBACK_DEFAULT: &str = "rollback_default";
 
 const FPS: u32 = 60;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -75,16 +76,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_rollback_type::<PlayerState>()
         .register_rollback_type::<GameState>()
         .with_input_system(keyboard_input_system.system())
-
-        .add_rollback_system_set(SystemSet::new()
-            .label(PlayerSystem)
-            .with_run_criteria(game_is_fighting_state)
-            .with_system(collision_system)
-            .with_system(screen_side_system)
-            .with_system(health_system_ui)
-            .with_system(player_state_system)
-            .with_system(player_movement_system)
-            .with_system(hitbox_debug_system)
+        .with_rollback_schedule(
+            Schedule::default().with_stage(
+                ROLLBACK_DEFAULT,
+                SystemStage::single_threaded()
+                .with_run_criteria(game_is_fighting_state)
+                .with_system(collision_system)
+                .with_system(screen_side_system)
+                .with_system(health_system_ui)
+                .with_system(player_state_system)
+                .with_system(player_movement_system)
+                .with_system(hitbox_debug_system)
+                .with_run_criteria(game_is_fighting_state)
+            ),
         )
         .add_system_set(SystemSet::new()
             .label(RestartSystem)

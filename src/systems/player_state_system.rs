@@ -55,8 +55,6 @@ impl Default for PlayerStateEnum {
     }
 }
 
-pub struct WinningPlayer {}
-pub struct LosingPlayer {}
 
 #[derive(Default, Reflect, Copy, Clone)]
 pub struct PlayerState {
@@ -116,6 +114,16 @@ impl PlayerState {
     
     pub fn reset_state(&mut self) {
         self.current_sprite_index = 0;
+    }
+
+    pub fn hard_reset(&mut self) {
+        self.player_state = PlayerStateEnum::Idle;
+        self.desired_player_state = PlayerStateEnum::Idle;
+        self.current_sprite_index = 0;
+        self.x_velocity = 0.0;
+        self.y_velocity = 0.0;
+        self.is_colliding = false;
+        self.state_is_dirty = true;
     }
 
     pub fn animation_finished(&mut self) -> PlayerStateEnum {

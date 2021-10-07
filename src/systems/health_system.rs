@@ -14,6 +14,10 @@ impl PlayerHealth {
             health: 10
         }
     }
+
+    pub fn reset(&mut self)  {
+        self.health = 100;
+    }
     
     pub fn take_damage(&mut self, amount: usize) -> bool{
         if amount > self.health {

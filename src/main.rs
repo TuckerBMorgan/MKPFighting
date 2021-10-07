@@ -13,13 +13,18 @@ mod systems;
 use crate::systems::*;
 
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, Reflect)]
 pub enum GameState {
     Setup,
     Fighting,
     Reset
 }
 
+impl Default for GameState {
+    fn default() -> GameState {
+        return GameState::Setup;
+    }
+}
 
 
 #[derive(Default)]
@@ -47,18 +52,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let collider_both = Path::new("./assets/hitboxes/character_1.json");
     App::new()
         .add_plugins(DefaultPlugins)
+        .insert_resource(WindowDescriptor {
+            title: "MKP Fighting".to_string(),
+            width: 1600.,
+            height: 400.,
+            vsync: true,
+            ..Default::default()
+        })
         .add_plugin(GGRSPlugin)
+
         .insert_resource(opt)
         .add_state(GameState::Setup)
+        .insert_resource(RestartSystemState::default())
         .insert_resource(ColliderSetComponent::from_file(&collider_both))
         .insert_resource(InputEvents::default())
         .insert_resource(TextureAtlasDictionary::default())
         .insert_resource(ShouldRenderHitBoxes::default())
         .add_startup_system(start_p2p_session)
-        .add_startup_system(setup)
+        .add_startup_system(match_setup)
         .add_startup_system(hit_box_setup_system)
         .register_rollback_type::<Transform>()
         .register_rollback_type::<PlayerState>()
+        .register_rollback_type::<GameState>()
         .with_input_system(keyboard_input_system.system())
 
         .add_rollback_system_set(SystemSet::new()
@@ -71,7 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with_system(player_movement_system)
             .with_system(hitbox_debug_system)
         )
-        .add_rollback_system_set(SystemSet::new()
+        .add_system_set(SystemSet::new()
             .label(RestartSystem)
             .with_run_criteria(game_is_reset_state)
             .with_system(restart_system)
@@ -84,8 +99,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
 }
 
+
+// Only let the Fighting System set run when 
+// our game state is Fighthing, this is a hack to deal with some
+// problems with how Bevy_ggrs handle schedules
 pub fn game_is_fighting_state(
-    mut state: ResMut<State<GameState>>,
+    state: Res<State<GameState>>,
 ) -> ShouldRun {
 
     match state.current() {
@@ -101,8 +120,11 @@ pub fn game_is_fighting_state(
     }
 }
 
+// Only let the Reset System set run when 
+// our game state is Reset, this is a hack to deal with some
+// problems with how Bevy_ggrs handle schedules
 pub fn game_is_reset_state(
-    mut state: ResMut<State<GameState>>,
+    state: Res<State<GameState>>,
 ) -> ShouldRun {
     match state.current() {
         GameState::Setup => {
@@ -116,6 +138,7 @@ pub fn game_is_reset_state(
         }
     }
 }
+
 
 
 fn sprite_system(
@@ -124,8 +147,11 @@ fn sprite_system(
     mut query: Query<(&mut Timer, &mut TextureAtlasSprite, &Handle<TextureAtlas>, &mut PlayerState, &ScreenSideEnum)>
 ) {
     for (mut timer, mut sprite, texture_atlas_handle, mut player_state, &screen_side) in query.iter_mut() {
+
+        //Update the timer
         timer.tick(time.delta());
         let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
+        //An odd place to do this, but ok for now, make sure the sprite is facing the right direciton
         match screen_side {
             ScreenSideEnum::Left => {
                 sprite.flip_x = false;
@@ -135,6 +161,7 @@ fn sprite_system(
             }
         }
 
+        // Time to change the sprite
         if timer.finished() {
             let next = ((player_state.current_sprite_index as usize + 1) % texture_atlas.textures.len()) as u32;
             //As we start it at 0, we should let the system know "we have finished playing a full animation cycle, who wants next"
@@ -148,6 +175,7 @@ fn sprite_system(
                 }
                 continue;
             }
+            //Make sure that the spirte, the characters idea of which sprite index we are on are in the same place
             sprite.index = next;
             player_state.current_sprite_index = next as usize;
         }
@@ -200,138 +228,4 @@ fn start_p2p_session(mut p2p_sess: ResMut<P2PSession>, opt: Res<Opt>) {
 
     // start the GGRS session
     p2p_sess.start_session().unwrap();
-}
-
-fn load_sprite_atlas_into_texture_dictionary(
-    animation_name: String, 
-    asset_server: &Res<AssetServer>, 
-    texture_atlases: &mut ResMut<Assets<TextureAtlas>>,
-    texture_atlas_handles: &mut ResMut<TextureAtlasDictionary>,
-    width: f32,
-    height: f32,
-    number_of_images: usize
-) {
-    let texture_handle = asset_server.load(animation_name.as_str());
-    let texture_atlas = TextureAtlas::from_grid(texture_handle, Vec2::new(width, height), number_of_images, 1);
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
-    texture_atlas_handles.animation_handles.insert(animation_name, texture_atlas_handle);
-}
-
-fn setup(
-    mut state: ResMut<State<GameState>>,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut rip: ResMut<RollbackIdProvider>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut texture_atlas_handles: ResMut<TextureAtlasDictionary>,
-    p2p_session: Option<Res<P2PSession>>,
-) {
-    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Idle.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 8);
-    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Run.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 8);
-    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Jump.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 2);
-    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Attack1.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 6);
-    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Fall.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 2);
-    load_sprite_atlas_into_texture_dictionary(String::from("sprites/TakeHit.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 4);
-    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Death.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 6);
-
-    let num_players = p2p_session
-        .map(|s| s.num_players()).expect("No GGRS session found");
-    
-    //Spawn the background image, simply fire and forget
-    let background_texture_handle = asset_server.load("sprites/background_bar.png");
-    let mut background_transform = Transform::from_translation(Vec3::new(0.0, 0.0, 0.0));
-    background_transform.scale.x = 0.8;
-    background_transform.scale.y = 0.8;
-
-    commands.spawn_bundle(SpriteBundle {
-        material: materials.add(background_texture_handle.into()),
-        transform: background_transform,
-        ..Default::default()
-    });
-
-    for i in 0..2 {
-        let black_texture = asset_server.load("sprites/black.png");
-        let mut blind_transform = Transform::from_translation(Vec3::new(0.0, 560.0 + (i as f32 * -1220.0), 0.0));
-        blind_transform.scale.x = 1600.0;
-        blind_transform.scale.y = 400.02;
-
-        if i == 0 {
-            commands.spawn_bundle(SpriteBundle {
-                material: materials.add(black_texture.into()),
-                transform: blind_transform,
-                ..Default::default()
-            }).insert(LowerBlind::default());
-        }
-        else {
-            commands.spawn_bundle(SpriteBundle {
-                material: materials.add(black_texture.into()),
-                transform: blind_transform,
-                ..Default::default()
-            }).insert(UpperBlind::default());
-        }
-    }
-    
-    
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    //Spawn each player
-    for i in 0..num_players {
-        if i == 0 {
-
-            let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), FLOOR_HEIGHT, 0.0));
-            p1_transform.scale.x = 2.0;
-            p1_transform.scale.y = 2.0;
-            let entity_id = commands
-                .spawn_bundle(SpriteSheetBundle {
-                    texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
-                    transform:p1_transform,
-                    ..Default::default()
-                })
-                .insert(Timer::from_seconds(0.1, true))
-                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle))
-                .insert(Rollback::new(rip.next_id()))
-                .insert(Player1::default())
-                .insert(ScreenSideEnum::Left)
-                .insert(PlayerHealth::new()).id().clone();
-            
-            let hitbox_texture_handle = asset_server.load("sprites/health_bar.png");
-            let mut health_transform = Transform::from_translation(Vec3::new(-400.0, HEALTH_UI_HEIGHT, 1.0));
-            health_transform.scale = Vec3::new(400.0, 50.0, 1.0);
-            commands.spawn_bundle(SpriteBundle {
-                material: materials.add(hitbox_texture_handle.into()),
-                transform: health_transform,
-                ..Default::default()
-            }).insert(PlayerHealthUI::new(entity_id));
-            
-        }
-        else {
-
-            let mut p1_transform = Transform::from_translation(Vec3::new(-100.0 + (200.0 * i as f32), FLOOR_HEIGHT, 0.0));
-            p1_transform.scale.x = 2.0;
-            p1_transform.scale.y = 2.0;
-
-            let entity_id = commands
-                .spawn_bundle(SpriteSheetBundle {
-                    texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
-                    transform:p1_transform,
-                    ..Default::default()
-                })
-                .insert(Timer::from_seconds(0.1, true))
-                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle))
-                .insert(Rollback::new(rip.next_id()))
-                .insert(Player2::default())
-                .insert(PlayerHealth::new())
-                .insert(ScreenSideEnum::Right).id().clone();
-
-            let hitbox_texture_handle = asset_server.load("sprites/health_bar.png");
-            let mut health_transform = Transform::from_translation(Vec3::new(400.0, HEALTH_UI_HEIGHT, 1.0));
-            health_transform.scale = Vec3::new(400.0, 50.0, 1.0);
-            commands.spawn_bundle(SpriteBundle {
-                material: materials.add(hitbox_texture_handle.into()),
-                transform: health_transform,
-                ..Default::default()
-            }).insert(PlayerHealthUI::new(entity_id));
-        }
-    }
-    state.set(GameState::Fighting).unwrap()
 }

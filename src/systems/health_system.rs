@@ -11,7 +11,7 @@ pub struct PlayerHealth {
 impl PlayerHealth {
     pub fn new() -> PlayerHealth {
         PlayerHealth {
-            health: 10
+            health: 100
         }
     }
 
@@ -19,7 +19,7 @@ impl PlayerHealth {
         self.health = 100;
     }
     
-    pub fn take_damage(&mut self, amount: usize) -> bool{
+    pub fn take_damage(&mut self, amount: usize) -> bool {
         if amount > self.health {
             self.health = 0;
             return true;
@@ -47,12 +47,21 @@ impl PlayerHealthUI {
 pub fn health_system_ui(
     mut state: ResMut<State<GameState>>,
     mut health_query: Query<(&mut Transform, &PlayerHealthUI)>,
-    mut players_query: Query<(&PlayerHealth, &mut PlayerState)>
+    mut players_query: Query<(&PlayerHealth, &mut PlayerState, &ScreenSideEnum)>
 ) {
     let mut someone_died = false;
     for (mut transform, &health_ui) in health_query.iter_mut() {
-        let (player_health, mut player_state) = players_query.get_mut(health_ui.entity.unwrap()).unwrap();
+        let (player_health, mut player_state, &screen_side) = players_query.get_mut(health_ui.entity.unwrap()).unwrap();
         transform.scale.x = player_health.health as f32 * 4.0f32;
+        match screen_side  {
+            ScreenSideEnum::Left => {
+                transform.translation.x = -400.0 - ((100.0 - player_health.health as f32) / 2.0f32) * 4.0f32;
+            },
+            ScreenSideEnum::Right => {
+                transform.translation.x = 400.0 + ((100.0 - player_health.health as f32) / 2.0f32) * 4.0f32;
+            }
+        }
+
         if player_health.health == 0 {
             player_state.set_player_state_to_transition(PlayerStateEnum::Death);
             someone_died = true;

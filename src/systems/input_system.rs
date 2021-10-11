@@ -8,7 +8,8 @@ pub struct InputEvents {
     pub left_right_axis: i8,
     pub up_down_axis: i8,
     pub jump_was_pressed: bool,
-    pub attack_1_was_pressed: bool
+    pub attack_1_was_pressed: bool,
+    pub special_ability: bool
 }
 
 impl InputEvents {
@@ -21,6 +22,7 @@ impl InputEvents {
         vector[2] = self.jump_was_pressed as u8;
     
         vector[3] = self.attack_1_was_pressed as u8;
+        vector[4] = self.special_ability as u8;
         return vector;
     }    
 
@@ -30,7 +32,9 @@ impl InputEvents {
             up_down_axis: input[player_index].buffer[1] as i8,
             jump_was_pressed: input[player_index].buffer[2] != 0,
             attack_1_was_pressed: input[player_index].buffer[3] != 0,
+            special_ability: input[player_index].buffer[4] != 0,
         }
+
     }
 }
 
@@ -59,6 +63,7 @@ pub fn keyboard_input_system(_handle: In<PlayerHandle>, keyboard_input: Res<Inpu
     if keyboard_input.pressed(KeyCode::W) {
         input_events.up_down_axis = -1;
     }
+
     if keyboard_input.pressed(KeyCode::S) {
         input_events.up_down_axis = 1;
     }
@@ -73,5 +78,11 @@ pub fn keyboard_input_system(_handle: In<PlayerHandle>, keyboard_input: Res<Inpu
     if keyboard_input.pressed(KeyCode::Q) {
         input_events.attack_1_was_pressed = true;
     }
+
+    input_events.special_ability = false;
+    if keyboard_input.pressed(KeyCode::E) {
+        input_events.special_ability = true;
+    }
+
     return input_events.convert_input_events_into_vector();
 }

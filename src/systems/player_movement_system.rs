@@ -3,7 +3,7 @@ use crate::systems::*;
 
 const GRAVITY : f32 = 1.00f32;
 pub const FLOOR_HEIGHT : f32 = -250.0f32;
-pub const PLAYER_SPEED : f32 = 5.0f32;
+pub const PLAYER_SPEED : f32 = 10.0f32;
 
 pub fn player_movement_system(
     time: Res<Time>,

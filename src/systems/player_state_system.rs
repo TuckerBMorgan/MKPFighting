@@ -13,7 +13,8 @@ pub enum PlayerStateEnum {
     Attack1,
     Fall,
     TakeHit,
-    Death
+    Death,
+    Dash
 }
 
 impl PlayerStateEnum {
@@ -39,6 +40,9 @@ impl PlayerStateEnum {
             },
             PlayerStateEnum::Death => {
                 String::from("Death")
+            },
+            PlayerStateEnum::Dash => {
+                String::from("Dash")
             }
         }
     }
@@ -65,7 +69,8 @@ pub struct PlayerState {
     pub x_velocity: f32,
     pub y_velocity: f32,
     pub is_colliding: bool,
-    pub state_is_dirty: bool
+    pub state_is_dirty: bool,
+    pub has_spawned_cloud: bool
 }
 
 impl PlayerState {
@@ -79,7 +84,8 @@ impl PlayerState {
             x_velocity: 0.0f32,
             y_velocity: 0.0f32,
             is_colliding: false,
-            state_is_dirty: true
+            state_is_dirty: true,
+            has_spawned_cloud: false
         }
     }
 
@@ -107,6 +113,9 @@ impl PlayerState {
             },
             PlayerStateEnum::Death => {
                 
+            },
+            PlayerStateEnum::Dash => {
+
             }
         }
         return copy_of_initial_state != self.player_state;
@@ -124,6 +133,7 @@ impl PlayerState {
         self.y_velocity = 0.0;
         self.is_colliding = false;
         self.state_is_dirty = true;
+        self.has_spawned_cloud = false;
     }
 
     pub fn animation_finished(&mut self) -> PlayerStateEnum {
@@ -148,6 +158,9 @@ impl PlayerState {
             },
             PlayerStateEnum::Death => {
                 PlayerStateEnum::Death
+            },
+            PlayerStateEnum::Dash => {
+                PlayerStateEnum::Idle
             }
         }
     }
@@ -164,14 +177,13 @@ impl PlayerState {
 pub fn player_state_system(
     mut commands: Commands,
     inputs: Res<Vec<GameInput>>,
-    mut query: Query<(&mut TextureAtlasSprite, Entity, &mut PlayerState, &ScreenSideEnum)>,
+    local_id: Res<LocalId>,
+    mut query: Query<(&mut TextureAtlasSprite, Entity, &mut PlayerState, &ScreenSideEnum, &Transform)>,
     res_test: Res<TextureAtlasDictionary>
 ) {
-    for (mut sprite, entity, mut player_state, &screen_side) in query.iter_mut() {
+    for (mut sprite, entity, mut player_state, &screen_side, &transform) in query.iter_mut() {
         let input = InputEvents::from_input_vector(&inputs, player_state.player_id);
         if player_state.state_is_dirty == false {
-
-        
             if input.left_right_axis != 0 {
                 if player_state.player_state == PlayerStateEnum::Idle {
                     player_state.set_player_state_to_transition(PlayerStateEnum::Run);
@@ -193,6 +205,27 @@ pub fn player_state_system(
                 if player_state.player_state == PlayerStateEnum::Idle || player_state.player_state == PlayerStateEnum::Run {
                     player_state.set_player_state_to_transition(PlayerStateEnum::Attack1);
                 }
+            }
+        }
+
+        if player_state.player_state == PlayerStateEnum::Idle {
+            if input.special_ability == true && player_state.has_spawned_cloud == false {
+                //Lets spawn a cloud entity at this characters feet
+                player_state.has_spawned_cloud = true;
+                let mut new_transform;
+                if player_state.player_id != local_id.id {
+                    new_transform = Transform::from_translation(Vec3::new(transform.translation.x, transform.translation.y, transform.translation.z + 1.0f32));
+                }
+                else {
+                    new_transform = Transform::from_translation(Vec3::new(transform.translation.x, transform.translation.y, transform.translation.z - 1.0f32));
+                }
+                new_transform.scale.x *= 1.5f32;
+                new_transform.scale.y *= 1.5f32;
+                commands.spawn_bundle(SpriteBundle {
+                    material: res_test.cloud_image.clone(),
+                    transform: new_transform,
+                    ..Default::default()
+                }).insert(CloudComponent::new(player_state.player_id));
             }
         }
 
@@ -228,6 +261,10 @@ pub fn player_state_system(
                 PlayerStateEnum::Death => {
                     next_animation = "sprites/Death.png";
                     player_state.x_velocity = 0.0;
+                },
+                PlayerStateEnum::Dash => {
+                    next_animation = "sprites/Dash.png";
+                    player_state.x_velocity = PLAYER_SPEED * 1.5f32 * screen_side.back_direction() * -1.0f32;
                 }
             }
             commands.entity(entity).insert(res_test.animation_handles[next_animation].clone());

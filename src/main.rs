@@ -31,7 +31,8 @@ impl Default for GameState {
 pub struct TextureAtlasDictionary {
     pub animation_handles: HashMap<String, Handle<TextureAtlas>>,
     pub debug_hit_box_texture: Handle<ColorMaterial>,
-    pub debug_hurt_box_texture: Handle<ColorMaterial>
+    pub debug_hurt_box_texture: Handle<ColorMaterial>,
+    pub cloud_image: Handle<ColorMaterial>
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
@@ -65,6 +66,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .insert_resource(opt)
         .add_state(GameState::Setup)
         .insert_resource(RestartSystemState::default())
+        .insert_resource(LocalId::default())
         .insert_resource(ColliderSetComponent::from_file(&collider_both))
         .insert_resource(InputEvents::default())
         .insert_resource(TextureAtlasDictionary::default())
@@ -76,6 +78,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_rollback_type::<PlayerState>()
         .register_rollback_type::<GameState>()
         .with_input_system(keyboard_input_system.system())
+        //Any of the systems that we wanted effected by Rollback
+        //To be honest, there is some guess work in there
         .with_rollback_schedule(
             Schedule::default().with_stage(
                 ROLLBACK_DEFAULT,
@@ -88,16 +92,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .with_system(player_movement_system)
                 .with_system(hitbox_debug_system)
                 .with_run_criteria(game_is_fighting_state)
+                .with_system(cloud_system)
             ),
+        )
+        //Any system we don't want in rollback, but do want fun during the fighting state
+        .add_system_set(SystemSet::new()
+            .with_run_criteria(game_is_fighting_state)
+            .with_system(sprite_system)
         )
         .add_system_set(SystemSet::new()
             .label(RestartSystem)
             .with_run_criteria(game_is_reset_state)
             .with_system(restart_system)
         )
-        .with_p2p_session(p2p_sess)
-        .add_system(sprite_system)
-        
+        .with_p2p_session(p2p_sess)        
         .run();
     Ok(())
     
@@ -197,7 +205,12 @@ struct Opt {
     spectators: Vec<SocketAddr>,
 }
 
-fn start_p2p_session(mut p2p_sess: ResMut<P2PSession>, opt: Res<Opt>) {
+#[derive(Default, Component)]
+pub struct LocalId {
+    pub id: usize
+}
+
+fn start_p2p_session(mut p2p_sess: ResMut<P2PSession>, opt: Res<Opt>, mut local_id: ResMut<LocalId>) {
     let mut local_handle = 0;
     let num_players = p2p_sess.num_players() as usize;
 
@@ -207,13 +220,20 @@ fn start_p2p_session(mut p2p_sess: ResMut<P2PSession>, opt: Res<Opt>) {
         if player_addr == "localhost" {
             p2p_sess.add_player(PlayerType::Local, i).unwrap();
             local_handle = i;
+            if i == 0 {
+                local_id.id = 0;
+            }
         } else {
+
             // remote players
             let remote_addr: SocketAddr =
                 player_addr.parse().expect("Invalid remote player address");
             p2p_sess
                 .add_player(PlayerType::Remote(remote_addr), i)
                 .unwrap();
+                if i == 0 {
+                    local_id.id = 1;
+                }
         }
     }
 

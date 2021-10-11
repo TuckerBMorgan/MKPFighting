@@ -35,12 +35,14 @@ pub struct LowerBlind {
 }
 
 pub fn restart_system(
+    mut commands: Commands,
     mut state: ResMut<State<GameState>>,
     mut restart_state: ResMut<RestartSystemState>,
     mut upper_blind_query: Query<(&UpperBlind, &mut Transform), (Without<LowerBlind>, Without<Player1>, Without<Player2>)>,
     mut lower_blind_query: Query<(&LowerBlind, &mut Transform),(Without<UpperBlind>, Without<Player1>, Without<Player2>)>,
     mut player_1_restart: Query<(&mut Transform, &mut PlayerState, &mut PlayerHealth, &mut TextureAtlasSprite, &Player1), Without<Player2>>,
-    mut player_2_restart: Query<(&mut Transform, &mut PlayerState, &mut PlayerHealth, &mut TextureAtlasSprite, &Player2), Without<Player1>>
+    mut player_2_restart: Query<(&mut Transform, &mut PlayerState, &mut PlayerHealth, &mut TextureAtlasSprite, &Player2), Without<Player1>>,
+    mut clouds: Query<(&CloudComponent, Entity)>
 ) {
     match restart_state.system_state {
         RestartSystemStateEnum::Blackout => {
@@ -76,6 +78,9 @@ pub fn restart_system(
                     player_health.reset();
                     transform.translation.x = 120.0;
                     sprite.index = 0;
+                }
+                for (_cloud, entity) in clouds.iter() {
+                    commands.entity(entity).despawn();
                 }
         
             }

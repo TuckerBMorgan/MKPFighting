@@ -28,6 +28,11 @@ pub fn match_setup(
     mut texture_atlas_handles: ResMut<TextureAtlasDictionary>,
     p2p_session: Option<Res<P2PSession>>,
 ) {
+
+
+    let cloud_image = asset_server.load("sprites/Cloud.png");
+    texture_atlas_handles.cloud_image = materials.add(cloud_image.clone().into());
+
     //Load each of our textures
     // TODO: have this handle different characters, for now it is just the single samurai
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Idle.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 8);
@@ -37,13 +42,14 @@ pub fn match_setup(
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Fall.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 2);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/TakeHit.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 4);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Death.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 6);
+    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Dash.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 1);
 
     let num_players = p2p_session
         .map(|s| s.num_players()).expect("No GGRS session found");
     
     //Spawn the background image, simply fire and forget
     let background_texture_handle = asset_server.load("sprites/background_bar.png");
-    let mut background_transform = Transform::from_translation(Vec3::new(0.0, 0.0, 0.0));
+    let mut background_transform = Transform::from_translation(Vec3::new(0.0, 0.0, -2.0));
     background_transform.scale.x = 0.8;
     background_transform.scale.y = 0.8;
 
@@ -98,7 +104,7 @@ pub fn match_setup(
                     transform:p1_transform,
                     ..Default::default()
                 })
-                .insert(Timer::from_seconds(0.1, true))
+                .insert(Timer::from_seconds(0.05, true))
                 .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle))
                 .insert(Rollback::new(rip.next_id()))
                 .insert(Player1::default())
@@ -124,7 +130,7 @@ pub fn match_setup(
                     transform:p1_transform,
                     ..Default::default()
                 })
-                .insert(Timer::from_seconds(0.1, true))
+                .insert(Timer::from_seconds(0.05, true))
                 .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle))
                 .insert(Rollback::new(rip.next_id()))
                 .insert(Player2::default())

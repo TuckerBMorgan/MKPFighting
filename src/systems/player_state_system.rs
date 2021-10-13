@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::systems::*;
 use crate::*;
 
+const INPUT_HISTORY_LENGTH : usize = 15;
 
 #[derive(PartialEq, Copy, Clone, Debug, Hash, Reflect, Component)]
 #[reflect(Hash)]
@@ -60,7 +61,9 @@ impl Default for PlayerStateEnum {
 }
 
 
-#[derive(Default, Reflect, Copy, Clone, Component)]
+
+
+#[derive(Default, Reflect, Clone, Component)]
 pub struct PlayerState {
     pub player_id: usize,
     pub player_state: PlayerStateEnum,
@@ -70,11 +73,13 @@ pub struct PlayerState {
     pub y_velocity: f32,
     pub is_colliding: bool,
     pub state_is_dirty: bool,
-    pub has_spawned_cloud: bool
+    pub has_spawned_cloud: bool,
+    pub inputs: Vec<InputEvents>,
+    pub current_index: usize,
+    pub number_of_inserted_events: usize
 }
 
 impl PlayerState {
-
     pub fn new(player_id: usize, player_state: PlayerStateEnum) -> PlayerState {
         PlayerState {
             player_id,
@@ -85,9 +90,64 @@ impl PlayerState {
             y_velocity: 0.0f32,
             is_colliding: false,
             state_is_dirty: true,
-            has_spawned_cloud: false
+            has_spawned_cloud: false,
+            inputs: vec![InputEvents::default(); INPUT_HISTORY_LENGTH],
+            current_index: 0,
+            number_of_inserted_events: 0
         }
     }
+
+    pub fn insert_input_event(&mut self, input_event: InputEvents)  {
+        self.inputs[self.current_index] = input_event;
+        self.current_index = (self.current_index + 1) % INPUT_HISTORY_LENGTH;
+        self.number_of_inserted_events += 1;
+    }
+
+    pub fn wants_to_dash(&mut self) -> bool {
+        //Does the history have enough added inputs
+        if self.number_of_inserted_events < INPUT_HISTORY_LENGTH {
+            return false;
+        }
+        //Lets find out place in the ring buffer
+        let start_index;
+        if self.current_index == 0 {
+            start_index = INPUT_HISTORY_LENGTH - 1;
+        }
+        else {
+            start_index = self.current_index - 1;
+        }
+
+        //We only start this when a player has just struck the run keys
+        if self.inputs[start_index].left_right_axis == 0 {
+            return false;
+        }
+        //What is the value of the starting left right acis
+        let dash_value = self.inputs[start_index].left_right_axis;
+
+        //
+        let mut let_go_left_right_axis = false;
+        let start_index_as_isize = start_index as isize;
+            
+        for i in 1..INPUT_HISTORY_LENGTH {
+            let mut current_back_index = start_index_as_isize - i as isize;
+            if current_back_index < 0 {
+                current_back_index = INPUT_HISTORY_LENGTH as isize + current_back_index;
+            }
+            let current_back_index = current_back_index as usize;
+
+            if let_go_left_right_axis == false && self.inputs[current_back_index].left_right_axis != 0 {
+                return false;
+            }
+            else if let_go_left_right_axis == false && self.inputs[current_back_index].left_right_axis == 0 {
+                let_go_left_right_axis = true;
+            }
+            else if let_go_left_right_axis == true && self.inputs[current_back_index].left_right_axis == dash_value {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     pub fn attempt_to_transition_state(&mut self) -> bool {
         let copy_of_initial_state = self.player_state.clone();
@@ -183,6 +243,9 @@ pub fn player_state_system(
 ) {
     for (mut sprite, entity, mut player_state, &screen_side, &transform) in query.iter_mut() {
         let input = InputEvents::from_input_vector(&inputs, player_state.player_id);
+        player_state.insert_input_event(input.clone());
+
+
         if player_state.state_is_dirty == false {
             if input.left_right_axis != 0 {
                 if player_state.player_state == PlayerStateEnum::Idle {
@@ -207,7 +270,12 @@ pub fn player_state_system(
                 }
             }
         }
-
+        if player_state.wants_to_dash() {
+            if player_state.player_state == PlayerStateEnum::Idle || player_state.player_state == PlayerStateEnum::Run {
+                player_state.set_player_state_to_transition(PlayerStateEnum::Dash);                
+            }
+        }
+        //There are a number of things we are do in the idle 
         if player_state.player_state == PlayerStateEnum::Idle {
             if input.special_ability == true && player_state.has_spawned_cloud == false {
                 //Lets spawn a cloud entity at this characters feet
@@ -227,6 +295,7 @@ pub fn player_state_system(
                     ..Default::default()
                 }).insert(CloudComponent::new(player_state.player_id));
             }
+
         }
 
 
@@ -264,12 +333,13 @@ pub fn player_state_system(
                 },
                 PlayerStateEnum::Dash => {
                     next_animation = "sprites/Dash.png";
-                    player_state.x_velocity = PLAYER_SPEED * 1.5f32 * screen_side.back_direction() * -1.0f32;
+                    player_state.x_velocity = PLAYER_DASH_SPEED * input.left_right_axis as f32;
                 }
             }
             commands.entity(entity).insert(res_test.animation_handles[next_animation].clone());
             player_state.player_state = player_state.desired_player_state;
         }
+
         player_state.state_is_dirty = false;
     }
 }

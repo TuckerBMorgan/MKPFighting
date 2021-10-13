@@ -2,8 +2,9 @@ use bevy::prelude::*;
 pub const INPUT_SIZE: usize = std::mem::size_of::<InputEvents>();
 use ggrs::{GameInput, PlayerHandle};
 
+
 //A Distilation of the true input state
-#[derive(Default)]
+#[derive(Default, Copy, Clone, Reflect)]
 pub struct InputEvents {
     pub left_right_axis: i8,
     pub up_down_axis: i8,

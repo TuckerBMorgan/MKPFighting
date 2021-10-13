@@ -42,7 +42,7 @@ pub fn match_setup(
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Fall.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 2);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/TakeHit.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 4);
     load_sprite_atlas_into_texture_dictionary(String::from("sprites/Death.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 6);
-    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Dash.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 1);
+    load_sprite_atlas_into_texture_dictionary(String::from("sprites/Dash.png"), &asset_server, &mut texture_atlases, &mut texture_atlas_handles, 200.0, 200.0, 4);
 
     let num_players = p2p_session
         .map(|s| s.num_players()).expect("No GGRS session found");

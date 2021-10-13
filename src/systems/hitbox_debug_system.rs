@@ -44,7 +44,8 @@ pub fn hitbox_debug_system(
     mut debug_query: Query<(&mut Transform, &DebugBox, Entity), Without<PlayerState>>,
     player_query: Query<(&PlayerState, &Transform, &ScreenSideEnum), Without<DebugBox>>
 ) {
-    
+   
+    /*
     if should_render_hit_box.should_render {
         // move all of the current hit boxes away from the middle of the screen, not great but EH
         for (mut t, _, _) in debug_query.iter_mut() {
@@ -83,4 +84,5 @@ pub fn hitbox_debug_system(
             }
         }
     }
+    */
 }

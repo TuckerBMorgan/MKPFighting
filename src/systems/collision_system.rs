@@ -129,8 +129,10 @@ pub fn collision_system(
                     }
                 }
                 else if player_state_2.can_take_a_hit() {
-                    health_2.take_damage(10);
-                    player_state_2.set_player_state_to_transition(PlayerStateEnum::TakeHit);
+                    if player_state_2.can_take_a_hit() {
+                        health_2.take_damage(10);
+                        player_state_2.set_player_state_to_transition(PlayerStateEnum::TakeHit);
+                    }
                 }
                 
             } else if bounces.len() > 0 {
@@ -139,7 +141,7 @@ pub fn collision_system(
 
                 match player_state_1.player_state {
                     PlayerStateEnum::Idle => {
-                        player_state_1.x_velocity = PLAYER_SPEED * player_1_side.back_direction();
+                        player_state_1.x_velocity = player_state_2.x_velocity * 2;
                     },
                     PlayerStateEnum::Attack1 => {
 
@@ -148,7 +150,7 @@ pub fn collision_system(
                 }
                 match player_state_2.player_state {
                     PlayerStateEnum::Idle => {
-                        player_state_2.x_velocity = PLAYER_SPEED * player_2_side.back_direction();
+                        player_state_2.x_velocity = player_state_1.x_velocity * 2;
                     },
                     PlayerStateEnum::Attack1 => {
 

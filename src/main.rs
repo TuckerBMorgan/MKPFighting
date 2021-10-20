@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 use structopt::StructOpt;
 use std::path::Path;
 
-use bevy::{prelude::*, ecs::schedule::ShouldRun};
+use bevy::{prelude::*, ecs::schedule::ShouldRun, core::{FixedTimestep, FixedTimesteps}};
 use bevy_ggrs::{Rollback, RollbackIdProvider, GGRSApp, GGRSPlugin};
 use ggrs::{GameInput, PlayerType, P2PSession};
 
@@ -38,6 +38,7 @@ pub struct TextureAtlasDictionary {
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
 pub struct PlayerSystem;
 const ROLLBACK_DEFAULT: &str = "rollback_default";
+const GAME_PLAY_DEFAULT: &str = "game_player_default";
 
 const FPS: u32 = 60;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -62,7 +63,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ..Default::default()
         })
         .add_plugin(GGRSPlugin)
-
         .insert_resource(opt)
         .add_state(GameState::Setup)
         .insert_resource(RestartSystemState::default())
@@ -77,6 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_rollback_type::<Transform>()
         .register_rollback_type::<PlayerState>()
         .register_rollback_type::<GameState>()
+        .register_rollback_type::<Timer>()
         .with_input_system(keyboard_input_system.system())
         //Any of the systems that we wanted effected by Rollback
         //To be honest, there is some guess work in there
@@ -89,12 +90,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .with_system(player_state_system)
                 .with_system(player_movement_system)
                 .with_system(cloud_system)
+                .with_system(sprite_system)
             ),
         )
         //Any system we don't want in rollback, but do want fun during the fighting state
         .add_system_set(SystemSet::new()
             .with_run_criteria(game_is_fighting_state)
-            .with_system(sprite_system)
+
             .with_system(screen_side_system)
             .with_system(health_system_ui)
             .with_system(hitbox_debug_system)

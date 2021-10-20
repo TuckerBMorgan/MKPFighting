@@ -66,14 +66,12 @@ pub fn restart_system(
             if slides_in_place == 2 {
                 restart_state.system_state = RestartSystemStateEnum::OpenUp;
                 for (mut transform, mut player_state, mut player_health, mut sprite, _player1) in player_1_restart.iter_mut() {
-                    println!("reset player 1");
                     player_state.hard_reset();
                     player_health.reset();
                     transform.translation.x = -120.0;
                     sprite.index = 0;
                 }
                 for (mut transform, mut player_state, mut player_health, mut sprite, _player2) in player_2_restart.iter_mut() {
-                    println!("reset player 2");
                     player_state.hard_reset();
                     player_health.reset();
                     transform.translation.x = 120.0;

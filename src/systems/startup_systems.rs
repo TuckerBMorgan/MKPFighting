@@ -28,7 +28,7 @@ pub fn match_setup(
     mut texture_atlas_handles: ResMut<TextureAtlasDictionary>,
     p2p_session: Option<Res<P2PSession>>,
 ) {
-
+    commands.spawn_bundle(UiCameraBundle::default());
 
     let cloud_image = asset_server.load("sprites/Cloud.png");
     texture_atlas_handles.cloud_image = materials.add(cloud_image.clone().into());
@@ -97,7 +97,6 @@ pub fn match_setup(
         p1_transform.scale.y = 2.0;
 
         if i == 0 {
-
             let entity_id = commands
                 .spawn_bundle(SpriteSheetBundle {
                     texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
@@ -105,7 +104,7 @@ pub fn match_setup(
                     ..Default::default()
                 })
                 .insert(Timer::from_seconds(0.05, true))
-                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle))
+                .insert(PlayerState::new(i as usize, PlayerStateEnum::Idle)) 
                 .insert(Rollback::new(rip.next_id()))
                 .insert(Player1::default())
                 .insert(ScreenSideEnum::Left)
@@ -119,11 +118,8 @@ pub fn match_setup(
                 transform: health_transform,
                 ..Default::default()
             }).insert(PlayerHealthUI::new(entity_id));
-            
         }
         else {
-
-
             let entity_id = commands
                 .spawn_bundle(SpriteSheetBundle {
                     texture_atlas: texture_atlas_handles.animation_handles["sprites/Idle.png"].clone(),
@@ -147,5 +143,38 @@ pub fn match_setup(
             }).insert(PlayerHealthUI::new(entity_id));
         }
     }
-    state.set(GameState::Fighting).unwrap()
+    state.set(GameState::Fighting).unwrap();
+
+/*
+    commands
+    .spawn_bundle(TextBundle {
+        style: Style {
+            align_self: AlignSelf::FlexEnd,
+            position_type: PositionType::Absolute,
+            position: Rect {
+                bottom: Val::Px(5.0),
+                right: Val::Px(15.0),
+                ..Default::default()
+            },
+            ..Default::default()
+        },
+        // Use the `Text::with_section` constructor
+        text: Text::with_section(
+            // Accepts a `String` or any type that converts into a `String`, such as `&str`
+            "hello\nbevy!",
+            TextStyle {
+                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font_size: 100.0,
+                color: Color::WHITE,
+            },
+            // Note: You can use `Default::default()` in place of the `TextAlignment`
+            TextAlignment {
+                horizontal: HorizontalAlign::Center,
+                ..Default::default()
+            },
+        ),
+        ..Default::default()
+    });
+    //.insert(ColorText);
+    */
 }

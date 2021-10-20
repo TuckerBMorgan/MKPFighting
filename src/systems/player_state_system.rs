@@ -63,20 +63,21 @@ impl Default for PlayerStateEnum {
 
 
 
-#[derive(Default, Reflect, Clone, Component)]
+#[derive(Default, Reflect, Clone, Component, Hash)]
 pub struct PlayerState {
     pub player_id: usize,
     pub player_state: PlayerStateEnum,
     pub desired_player_state: PlayerStateEnum,
     pub current_sprite_index: usize,
-    pub x_velocity: f32,
-    pub y_velocity: f32,
+    pub x_velocity: i32,
+    pub y_velocity: i32,
     pub is_colliding: bool,
     pub state_is_dirty: bool,
     pub has_spawned_cloud: bool,
     pub inputs: Vec<InputEvents>,
     pub current_index: usize,
-    pub number_of_inserted_events: usize
+    pub number_of_inserted_events: usize,
+    pub has_dahsed: bool
 }
 
 impl PlayerState {
@@ -86,14 +87,15 @@ impl PlayerState {
             player_state,
             desired_player_state: player_state,
             current_sprite_index: 0,
-            x_velocity: 0.0f32,
-            y_velocity: 0.0f32,
+            x_velocity: 0,
+            y_velocity: 0,
             is_colliding: false,
             state_is_dirty: true,
             has_spawned_cloud: false,
             inputs: vec![InputEvents::default(); INPUT_HISTORY_LENGTH],
             current_index: 0,
-            number_of_inserted_events: 0
+            number_of_inserted_events: 0,
+            has_dahsed: false
         }
     }
 
@@ -104,6 +106,9 @@ impl PlayerState {
     }
 
     pub fn wants_to_dash(&mut self) -> bool {
+        
+        return false;
+
         //Does the history have enough added inputs
         if self.number_of_inserted_events < INPUT_HISTORY_LENGTH {
             return false;
@@ -189,8 +194,8 @@ impl PlayerState {
         self.player_state = PlayerStateEnum::Idle;
         self.desired_player_state = PlayerStateEnum::Idle;
         self.current_sprite_index = 0;
-        self.x_velocity = 0.0;
-        self.y_velocity = 0.0;
+        self.x_velocity = 0;
+        self.y_velocity = 0;
         self.is_colliding = false;
         self.state_is_dirty = true;
         self.has_spawned_cloud = false;
@@ -269,10 +274,11 @@ pub fn player_state_system(
                     player_state.set_player_state_to_transition(PlayerStateEnum::Attack1);
                 }
             }
-        }
-        if player_state.wants_to_dash() {
-            if player_state.player_state == PlayerStateEnum::Idle || player_state.player_state == PlayerStateEnum::Run {
-                player_state.set_player_state_to_transition(PlayerStateEnum::Dash);                
+            if input.dash == true && input.left_right_axis != 0 && player_state.has_dahsed == false {
+                if player_state.player_state == PlayerStateEnum::Idle || player_state.player_state == PlayerStateEnum::Run {
+                    player_state.set_player_state_to_transition(PlayerStateEnum::Dash);
+                    player_state.has_dahsed = true;
+                }
             }
         }
         //There are a number of things we are do in the idle 
@@ -295,9 +301,7 @@ pub fn player_state_system(
                     ..Default::default()
                 }).insert(CloudComponent::new(player_state.player_id));
             }
-
         }
-
 
         if player_state.attempt_to_transition_state() || player_state.state_is_dirty {
             sprite.index = 0;
@@ -306,34 +310,34 @@ pub fn player_state_system(
             match player_state.desired_player_state {
                 PlayerStateEnum::Idle => {
                     next_animation = "sprites/Idle.png";
-                    player_state.x_velocity = 0.0;
+                    player_state.x_velocity = 0;
                 },
                 PlayerStateEnum::Run => {
                     next_animation = "sprites/Run.png";
-                    player_state.x_velocity = PLAYER_SPEED * input.left_right_axis as f32;
+                    player_state.x_velocity = PLAYER_SPEED * input.left_right_axis as i32;
                 },
                 PlayerStateEnum::Jump => {
                     next_animation = "sprites/Jump.png";
-                    player_state.y_velocity = 25.0f32;
+                    player_state.y_velocity = 25;
                 },
                 PlayerStateEnum::Attack1 => {
                     next_animation = "sprites/Attack1.png";
-                    player_state.x_velocity = 0.0;
+                    player_state.x_velocity = 0;
                 }
                 PlayerStateEnum::Fall => {
                     next_animation = "sprites/Fall.png";
                 },
                 PlayerStateEnum::TakeHit => {
                     next_animation = "sprites/TakeHit.png";
-                    player_state.x_velocity = PLAYER_SPEED * 1.5f32 * screen_side.back_direction();
+                    player_state.x_velocity = PLAYER_HIT_SPEED * screen_side.back_direction() as i32;
                 },
                 PlayerStateEnum::Death => {
                     next_animation = "sprites/Death.png";
-                    player_state.x_velocity = 0.0;
+                    player_state.x_velocity = 0;
                 },
                 PlayerStateEnum::Dash => {
                     next_animation = "sprites/Dash.png";
-                    player_state.x_velocity = PLAYER_DASH_SPEED * input.left_right_axis as f32;
+                    player_state.x_velocity = PLAYER_DASH_SPEED * input.left_right_axis as i32;
                 }
             }
             commands.entity(entity).insert(res_test.animation_handles[next_animation].clone());

@@ -3,7 +3,6 @@ use std::path::Path;
 use structopt::StructOpt;
 
 use bevy::{
-    core::{FixedTimestep, FixedTimesteps},
     ecs::schedule::ShouldRun,
     prelude::*,
 };
@@ -39,7 +38,6 @@ pub struct TextureAtlasDictionary {
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
 pub struct PlayerSystem;
 const ROLLBACK_DEFAULT: &str = "rollback_default";
-const GAME_PLAY_DEFAULT: &str = "game_player_default";
 
 const FPS: u32 = 60;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -89,8 +87,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .with_system(collision_system)
                     .with_system(player_state_system)
                     .with_system(player_movement_system)
-                    .with_system(cloud_system)
-                    .with_system(sprite_system),
+                    .with_system(sprite_system)
+                    .with_system(round_timer_system)
             ),
         )
         //Any system we don't want in rollback, but do want fun during the fighting state
@@ -170,7 +168,6 @@ impl SpriteTimer {
 }
 
 fn sprite_system(
-    time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
     mut query: Query<(
         &mut SpriteTimer,

@@ -1,6 +1,5 @@
 use crate::systems::*;
 use crate::*;
-use bevy::prelude::*;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel, Component)]
 pub struct RestartSystem;
@@ -60,7 +59,8 @@ pub fn restart_system(
         ),
         Without<Player1>,
     >,
-    mut clouds: Query<(&CloudComponent, Entity)>,
+    clouds: Query<(&CloudComponent, Entity)>,
+    mut round_timer: Query<&mut RoundTimer>,
 ) {
     match restart_state.system_state {
         RestartSystemStateEnum::Blackout => {
@@ -101,6 +101,10 @@ pub fn restart_system(
                 }
                 for (_cloud, entity) in clouds.iter() {
                     commands.entity(entity).despawn();
+                }
+
+                for mut round_timer in round_timer.iter_mut() {
+                    round_timer.reset();
                 }
             }
         }

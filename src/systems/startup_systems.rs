@@ -1,6 +1,5 @@
 use crate::systems::*;
 use crate::*;
-use bevy::prelude::*;
 
 fn load_sprite_atlas_into_texture_dictionary(
     animation_name: String,
@@ -260,5 +259,5 @@ pub fn match_setup(
             ),
             ..Default::default()
         })
-        .insert(RoundTimer);
+        .insert(RoundTimer::new(60));
 }

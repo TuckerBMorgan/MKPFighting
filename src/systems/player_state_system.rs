@@ -1,6 +1,5 @@
 use crate::systems::*;
 use crate::*;
-use bevy::prelude::*;
 
 const INPUT_HISTORY_LENGTH: usize = 15;
 
@@ -83,56 +82,6 @@ impl PlayerState {
         self.inputs[self.current_index] = input_event;
         self.current_index = (self.current_index + 1) % INPUT_HISTORY_LENGTH;
         self.number_of_inserted_events += 1;
-    }
-
-    pub fn wants_to_dash(&mut self) -> bool {
-        return false;
-
-        //Does the history have enough added inputs
-        if self.number_of_inserted_events < INPUT_HISTORY_LENGTH {
-            return false;
-        }
-        //Lets find out place in the ring buffer
-        let start_index;
-        if self.current_index == 0 {
-            start_index = INPUT_HISTORY_LENGTH - 1;
-        } else {
-            start_index = self.current_index - 1;
-        }
-
-        //We only start this when a player has just struck the run keys
-        if self.inputs[start_index].left_right_axis == 0 {
-            return false;
-        }
-        //What is the value of the starting left right acis
-        let dash_value = self.inputs[start_index].left_right_axis;
-
-        //
-        let mut let_go_left_right_axis = false;
-        let start_index_as_isize = start_index as isize;
-
-        for i in 1..INPUT_HISTORY_LENGTH {
-            let mut current_back_index = start_index_as_isize - i as isize;
-            if current_back_index < 0 {
-                current_back_index = INPUT_HISTORY_LENGTH as isize + current_back_index;
-            }
-            let current_back_index = current_back_index as usize;
-
-            if let_go_left_right_axis == false
-                && self.inputs[current_back_index].left_right_axis != 0
-            {
-                return false;
-            } else if let_go_left_right_axis == false
-                && self.inputs[current_back_index].left_right_axis == 0
-            {
-                let_go_left_right_axis = true;
-            } else if let_go_left_right_axis == true
-                && self.inputs[current_back_index].left_right_axis == dash_value
-            {
-                return true;
-            }
-        }
-        return false;
     }
 
     pub fn attempt_to_transition_state(&mut self) -> bool {

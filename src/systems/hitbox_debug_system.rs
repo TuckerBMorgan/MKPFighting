@@ -1,15 +1,15 @@
+#[allow(dead_code)]
 use crate::systems::*;
 use crate::*;
-use bevy::prelude::*;
-
+#[allow(dead_code)]
 #[derive(Default, Component)]
 pub struct ShouldRenderHitBoxes {
     should_render: bool,
 }
-
+#[allow(dead_code)]
 #[derive(Default, Copy, Clone, Component)]
 pub struct DebugBox {}
-
+#[allow(dead_code)]
 pub fn hit_box_setup_system(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -34,13 +34,20 @@ pub fn hit_box_setup_system(
     }
 }
 
+#[allow(dead_code)]
 pub fn hitbox_debug_system(
-    mut commands: Commands,
-    should_render_hit_box: ResMut<ShouldRenderHitBoxes>,
-    collider_set_component: Res<ColliderSetComponent>,
-    texture_handles: ResMut<TextureAtlasDictionary>,
-    mut debug_query: Query<(&mut Transform, &DebugBox, Entity), Without<PlayerState>>,
-    player_query: Query<(&PlayerState, &Transform, &ScreenSideEnum), Without<DebugBox>>,
+    #[allow(dead_code)]
+    _commands: Commands,
+    #[allow(dead_code)]
+    _should_render_hit_box: ResMut<ShouldRenderHitBoxes>,
+    #[allow(dead_code)]
+    _collider_set_component: Res<ColliderSetComponent>,
+    #[allow(dead_code)]
+    _texture_handles: ResMut<TextureAtlasDictionary>,
+    #[allow(dead_code)]
+    _debug_query: Query<(&mut Transform, &DebugBox, Entity), Without<PlayerState>>,
+    #[allow(dead_code)]
+    _player_query: Query<(&PlayerState, &Transform, &ScreenSideEnum), Without<DebugBox>>,
 ) {
 
     /*

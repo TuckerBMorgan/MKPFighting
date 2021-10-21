@@ -35,6 +35,7 @@ pub struct Collider {
 
 struct ColliderEvent {
     collider_type_1: ColliderType,
+    #[allow(dead_code)]
     collider_type_2: ColliderType,
 }
 

@@ -243,10 +243,10 @@ pub fn player_state_system(
     mut commands: Commands,
     inputs: Res<Vec<GameInput>>,
     local_id: Res<LocalId>,
-    mut query: Query<(&mut TextureAtlasSprite, Entity, &mut PlayerState, &ScreenSideEnum, &Transform)>,
+    mut query: Query<(&mut TextureAtlasSprite, Entity, &mut PlayerState, &ScreenSideEnum, &Transform, &mut SpriteTimer)>,
     res_test: Res<TextureAtlasDictionary>
 ) {
-    for (mut sprite, entity, mut player_state, &screen_side, &transform) in query.iter_mut() {
+    for (mut sprite, entity, mut player_state, &screen_side, &transform, mut sprite_timer) in query.iter_mut() {
         let input = InputEvents::from_input_vector(&inputs, player_state.player_id);
         player_state.insert_input_event(input.clone());
 
@@ -306,6 +306,7 @@ pub fn player_state_system(
         if player_state.attempt_to_transition_state() || player_state.state_is_dirty {
             sprite.index = 0;
             player_state.current_sprite_index = 0;
+            sprite_timer.reset();
             let next_animation;
             match player_state.desired_player_state {
                 PlayerStateEnum::Idle => {

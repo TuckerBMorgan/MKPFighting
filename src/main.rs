@@ -1,23 +1,25 @@
 use std::net::SocketAddr;
-use structopt::StructOpt;
 use std::path::Path;
+use structopt::StructOpt;
 
-use bevy::{prelude::*, ecs::schedule::ShouldRun, core::{FixedTimestep, FixedTimesteps}};
-use bevy_ggrs::{Rollback, RollbackIdProvider, GGRSApp, GGRSPlugin};
-use ggrs::{GameInput, PlayerType, P2PSession};
-
+use bevy::{
+    core::{FixedTimestep, FixedTimesteps},
+    ecs::schedule::ShouldRun,
+    prelude::*,
+};
+use bevy_ggrs::{GGRSApp, GGRSPlugin, Rollback, RollbackIdProvider};
+use ggrs::{GameInput, P2PSession, PlayerType};
 
 use std::collections::HashMap;
 
 mod systems;
 use crate::systems::*;
 
-
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Reflect, Component)]
 pub enum GameState {
     Setup,
     Fighting,
-    Reset
+    Reset,
 }
 
 impl Default for GameState {
@@ -26,13 +28,12 @@ impl Default for GameState {
     }
 }
 
-
 #[derive(Default)]
 pub struct TextureAtlasDictionary {
     pub animation_handles: HashMap<String, Handle<TextureAtlas>>,
     pub debug_hit_box_texture: Handle<ColorMaterial>,
     pub debug_hurt_box_texture: Handle<ColorMaterial>,
-    pub cloud_image: Handle<ColorMaterial>
+    pub cloud_image: Handle<ColorMaterial>,
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
@@ -42,7 +43,6 @@ const GAME_PLAY_DEFAULT: &str = "game_player_default";
 
 const FPS: u32 = 60;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // read cmd line arguments
     let opt = Opt::from_args();
     let num_players = opt.players.len();
@@ -85,70 +85,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Schedule::default().with_stage(
                 ROLLBACK_DEFAULT,
                 SystemStage::single_threaded()
-                .with_run_criteria(game_is_fighting_state)
-                .with_system(collision_system)
-                .with_system(player_state_system)
-                .with_system(player_movement_system)
-                .with_system(cloud_system)
-                .with_system(sprite_system)
+                    .with_run_criteria(game_is_fighting_state)
+                    .with_system(collision_system)
+                    .with_system(player_state_system)
+                    .with_system(player_movement_system)
+                    .with_system(cloud_system)
+                    .with_system(sprite_system),
             ),
         )
         //Any system we don't want in rollback, but do want fun during the fighting state
-        .add_system_set(SystemSet::new()
-            .with_run_criteria(game_is_fighting_state)
-
-            .with_system(screen_side_system)
-            .with_system(health_system_ui)
-            .with_system(hitbox_debug_system)
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(game_is_fighting_state)
+                .with_system(screen_side_system)
+                .with_system(health_system_ui)
+                .with_system(hitbox_debug_system),
         )
-        .add_system_set(SystemSet::new()
-            .label(RestartSystem)
-            .with_run_criteria(game_is_reset_state)
-            .with_system(restart_system)
+        .add_system_set(
+            SystemSet::new()
+                .label(RestartSystem)
+                .with_run_criteria(game_is_reset_state)
+                .with_system(restart_system),
         )
-        .with_p2p_session(p2p_sess)        
+        .with_p2p_session(p2p_sess)
         .run();
     Ok(())
-    
 }
 
-
-// Only let the Fighting System set run when 
+// Only let the Fighting System set run when
 // our game state is Fighthing, this is a hack to deal with some
 // problems with how Bevy_ggrs handle schedules
-pub fn game_is_fighting_state(
-    state: Res<State<GameState>>,
-) -> ShouldRun {
-
+pub fn game_is_fighting_state(state: Res<State<GameState>>) -> ShouldRun {
     match state.current() {
-        GameState::Setup => {
-            ShouldRun::No
-        },
-        GameState::Fighting => {
-            ShouldRun::Yes
-        }
-        GameState::Reset => {
-            ShouldRun::No
-        }
+        GameState::Setup => ShouldRun::No,
+        GameState::Fighting => ShouldRun::Yes,
+        GameState::Reset => ShouldRun::No,
     }
 }
 
-// Only let the Reset System set run when 
+// Only let the Reset System set run when
 // our game state is Reset, this is a hack to deal with some
 // problems with how Bevy_ggrs handle schedules
-pub fn game_is_reset_state(
-    state: Res<State<GameState>>,
-) -> ShouldRun {
+pub fn game_is_reset_state(state: Res<State<GameState>>) -> ShouldRun {
     match state.current() {
-        GameState::Setup => {
-            ShouldRun::No
-        },
-        GameState::Fighting => {
-            ShouldRun::No
-        }
-        GameState::Reset => {
-            ShouldRun::Yes
-        }
+        GameState::Setup => ShouldRun::No,
+        GameState::Fighting => ShouldRun::No,
+        GameState::Reset => ShouldRun::Yes,
     }
 }
 
@@ -156,7 +138,7 @@ pub fn game_is_reset_state(
 pub struct SpriteTimer {
     total_frames: usize,
     current_frame: usize,
-    finished: bool
+    finished: bool,
 }
 
 impl SpriteTimer {
@@ -164,7 +146,7 @@ impl SpriteTimer {
         SpriteTimer {
             total_frames,
             current_frame: 0,
-            finished: false
+            finished: false,
         }
     }
 
@@ -187,14 +169,20 @@ impl SpriteTimer {
     }
 }
 
-
 fn sprite_system(
     time: Res<Time>,
     texture_atlases: Res<Assets<TextureAtlas>>,
-    mut query: Query<(&mut SpriteTimer, &mut TextureAtlasSprite, &Handle<TextureAtlas>, &mut PlayerState, &ScreenSideEnum)>
+    mut query: Query<(
+        &mut SpriteTimer,
+        &mut TextureAtlasSprite,
+        &Handle<TextureAtlas>,
+        &mut PlayerState,
+        &ScreenSideEnum,
+    )>,
 ) {
-    for (mut timer, mut sprite, texture_atlas_handle, mut player_state, &screen_side) in query.iter_mut() {
-
+    for (mut timer, mut sprite, texture_atlas_handle, mut player_state, &screen_side) in
+        query.iter_mut()
+    {
         //Update the timer
         timer.tick();
         let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
@@ -202,7 +190,7 @@ fn sprite_system(
         match screen_side {
             ScreenSideEnum::Left => {
                 sprite.flip_x = false;
-            },
+            }
             ScreenSideEnum::Right => {
                 sprite.flip_x = true;
             }
@@ -210,14 +198,14 @@ fn sprite_system(
 
         // Time to change the sprite
         if timer.finished() {
-            let next = ((player_state.current_sprite_index as usize + 1) % texture_atlas.textures.len()) as u32;
+            let next = ((player_state.current_sprite_index as usize + 1)
+                % texture_atlas.textures.len()) as u32;
             //As we start it at 0, we should let the system know "we have finished playing a full animation cycle, who wants next"
             if next == 0 {
                 let desired_state = player_state.animation_finished();
                 if desired_state == player_state.player_state {
                     player_state.reset_state();
-                }
-                else {
+                } else {
                     player_state.set_player_state_to_transition(desired_state);
                 }
                 continue;
@@ -242,10 +230,14 @@ struct Opt {
 
 #[derive(Default, Component)]
 pub struct LocalId {
-    pub id: usize
+    pub id: usize,
 }
 
-fn start_p2p_session(mut p2p_sess: ResMut<P2PSession>, opt: Res<Opt>, mut local_id: ResMut<LocalId>) {
+fn start_p2p_session(
+    mut p2p_sess: ResMut<P2PSession>,
+    opt: Res<Opt>,
+    mut local_id: ResMut<LocalId>,
+) {
     let mut local_handle = 0;
     let num_players = p2p_sess.num_players() as usize;
 
@@ -259,16 +251,15 @@ fn start_p2p_session(mut p2p_sess: ResMut<P2PSession>, opt: Res<Opt>, mut local_
                 local_id.id = 0;
             }
         } else {
-
             // remote players
             let remote_addr: SocketAddr =
                 player_addr.parse().expect("Invalid remote player address");
             p2p_sess
                 .add_player(PlayerType::Remote(remote_addr), i)
                 .unwrap();
-                if i == 0 {
-                    local_id.id = 1;
-                }
+            if i == 0 {
+                local_id.id = 1;
+            }
         }
     }
 

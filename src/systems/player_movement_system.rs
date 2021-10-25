@@ -1,4 +1,5 @@
 use crate::systems::*;
+use crate::*;
 use bevy::prelude::*;
 
 const GRAVITY: i32 = 1;
@@ -8,7 +9,13 @@ pub const PLAYER_DASH_SPEED: i32 = 15;
 pub const PLAYER_LIGHT_HIT_SPEED: i32 = 10;
 pub const PLAYER_HEAVY_HIT_SPEED: i32 = 15;
 
-pub fn player_movement_system(mut query: Query<(&mut Transform, &mut PlayerState)>) {
+pub fn player_movement_system(
+    mut query: Query<(&mut Transform, &mut PlayerState)>,
+    state: Res<State<GameState>>,
+) {
+    if *state.current() == GameState::HitStop {
+        return;
+    }
     for (mut transform, mut player_state) in query.iter_mut() {
         transform.translation += Vec3::new(
             player_state.x_velocity as f32,

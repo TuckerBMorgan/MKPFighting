@@ -6,6 +6,12 @@ use crate::*;
 pub struct ShouldRenderHitBoxes {
     should_render: bool,
 }
+
+impl ShouldRenderHitBoxes {
+    pub fn new(should_render: bool) -> ShouldRenderHitBoxes {
+        ShouldRenderHitBoxes { should_render }
+    }
+}
 #[allow(dead_code)]
 #[derive(Default, Copy, Clone, Component)]
 pub struct DebugBox {}

@@ -16,6 +16,7 @@ pub enum GameState {
     Setup,
     Fighting,
     Reset,
+    HitStop,
 }
 
 impl Default for GameState {
@@ -49,23 +50,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let collider_both = Path::new("./assets/hitboxes/character_1.json");
     App::new()
-        .add_plugins(DefaultPlugins)
-        .add_plugin(GGRSPlugin)
         .insert_resource(WindowDescriptor {
             title: "MKP Fighting".to_string(),
-            width: 1600.,
-            height: 400.,
+            width: 1280.,
+            height: 700.,
             vsync: true,
             ..Default::default()
         })
+        .add_plugins(DefaultPlugins)
+        .add_plugin(GGRSPlugin)
+        .insert_resource(ShouldRenderHitBoxes::new(opt.render_hitboxes))
         .insert_resource(opt)
+        .insert_resource(HitStopTimer::new(5))
         .add_state(GameState::Setup)
         .insert_resource(RestartSystemState::default())
         .insert_resource(LocalId::default())
         .insert_resource(ColliderSetComponent::from_file(&collider_both))
         .insert_resource(InputEvents::default())
         .insert_resource(TextureAtlasDictionary::default())
-        .insert_resource(ShouldRenderHitBoxes::default())
         .add_startup_system(start_p2p_session)
         .add_startup_system(match_setup)
         .add_startup_system(hit_box_setup_system)
@@ -103,13 +105,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .with_system(restart_system),
         )
         .with_p2p_session(p2p_sess)
-        .insert_resource(WindowDescriptor {
-            title: "MKP Fighting".to_string(),
-            width: 1600.,
-            height: 400.,
-            vsync: true,
-            ..Default::default()
-        })
         .run();
     Ok(())
 }
@@ -121,6 +116,7 @@ pub fn game_is_fighting_state(state: Res<State<GameState>>) -> ShouldRun {
     match state.current() {
         GameState::Setup => ShouldRun::No,
         GameState::Fighting => ShouldRun::Yes,
+        GameState::HitStop => ShouldRun::Yes,
         GameState::Reset => ShouldRun::No,
     }
 }
@@ -132,6 +128,7 @@ pub fn game_is_reset_state(state: Res<State<GameState>>) -> ShouldRun {
     match state.current() {
         GameState::Setup => ShouldRun::No,
         GameState::Fighting => ShouldRun::No,
+        GameState::HitStop => ShouldRun::No,
         GameState::Reset => ShouldRun::Yes,
     }
 }
@@ -171,6 +168,17 @@ impl SpriteTimer {
     }
 }
 
+struct HitStopTimer {
+    length: usize,
+    current: usize,
+}
+
+impl HitStopTimer {
+    pub fn new(length: usize) -> HitStopTimer {
+        HitStopTimer { length, current: 0 }
+    }
+}
+
 fn sprite_system(
     texture_atlases: Res<Assets<TextureAtlas>>,
     mut query: Query<(
@@ -180,7 +188,17 @@ fn sprite_system(
         &mut PlayerState,
         &ScreenSideEnum,
     )>,
+    mut state: ResMut<State<GameState>>,
+    mut hit_stop_timer: ResMut<HitStopTimer>,
 ) {
+    if *state.current() == GameState::HitStop {
+        hit_stop_timer.current += 1;
+        if hit_stop_timer.current == hit_stop_timer.length {
+            hit_stop_timer.current = 0;
+            state.set(GameState::Fighting).unwrap();
+        }
+        return;
+    }
     for (mut timer, mut sprite, texture_atlas_handle, mut player_state, &screen_side) in
         query.iter_mut()
     {
@@ -225,6 +243,8 @@ struct Opt {
     local_port: u16,
     #[structopt(short, long)]
     players: Vec<String>,
+    #[structopt(short, long)]
+    render_hitboxes: bool,
     #[structopt(short, long)]
     spectators: Vec<SocketAddr>,
 }

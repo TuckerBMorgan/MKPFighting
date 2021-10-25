@@ -226,10 +226,15 @@ pub fn player_state_system(
         &mut SpriteTimer,
     )>,
     res_test: Res<TextureAtlasDictionary>,
+    state: Res<State<GameState>>,
 ) {
     for (mut sprite, entity, mut player_state, &screen_side, &transform, mut sprite_timer) in
         query.iter_mut()
     {
+        if *state.current() == GameState::HitStop {
+            return;
+        }
+
         player_state.tick_timers();
 
         let input = InputEvents::from_input_vector(&inputs, player_state.player_id);

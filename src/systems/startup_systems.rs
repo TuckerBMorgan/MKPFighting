@@ -68,13 +68,22 @@ pub fn match_setup(
         2,
     );
     load_sprite_atlas_into_texture_dictionary(
-        String::from("sprites/Attack1.png"),
+        String::from("sprites/HeavyAttack.png"),
         &asset_server,
         &mut texture_atlases,
         &mut texture_atlas_handles,
         200.0,
         200.0,
         6,
+    );
+    load_sprite_atlas_into_texture_dictionary(
+        String::from("sprites/LightAttack.png"),
+        &asset_server,
+        &mut texture_atlases,
+        &mut texture_atlas_handles,
+        200.0,
+        200.0,
+        3,
     );
     load_sprite_atlas_into_texture_dictionary(
         String::from("sprites/Fall.png"),
@@ -187,10 +196,11 @@ pub fn match_setup(
                 .id()
                 .clone();
 
-            let hitbox_texture_handle = asset_server.load("sprites/health_bar.png");
+            //Health bar
+            let hitbox_texture_handle = asset_server.load("sprites/green.png");
             let mut health_transform =
-                Transform::from_translation(Vec3::new(-400.0, HEALTH_UI_HEIGHT, 1.0));
-            health_transform.scale = Vec3::new(400.0, 50.0, 1.0);
+                Transform::from_translation(Vec3::new(-400.0, HEALTH_UI_HEIGHT, 3.0));
+            health_transform.scale = Vec3::new(400.0, 30.0, 1.0);
             commands
                 .spawn_bundle(SpriteBundle {
                     material: materials.add(hitbox_texture_handle.into()),
@@ -198,6 +208,16 @@ pub fn match_setup(
                     ..Default::default()
                 })
                 .insert(PlayerHealthUI::new(entity_id));
+            //Health bar backing to help it pop
+            let health_background = asset_server.load("sprites/health_background.png");
+            let health_transform =
+                Transform::from_translation(Vec3::new(-390.0, HEALTH_UI_HEIGHT - 5.0, 2.0));
+
+            commands.spawn_bundle(SpriteBundle {
+                material: materials.add(health_background.into()),
+                transform: health_transform,
+                ..Default::default()
+            });
         } else {
             let entity_id = commands
                 .spawn_bundle(SpriteSheetBundle {
@@ -215,10 +235,10 @@ pub fn match_setup(
                 .id()
                 .clone();
 
-            let hitbox_texture_handle = asset_server.load("sprites/health_bar.png");
+            let hitbox_texture_handle = asset_server.load("sprites/green.png");
             let mut health_transform =
-                Transform::from_translation(Vec3::new(400.0, HEALTH_UI_HEIGHT, 1.0));
-            health_transform.scale = Vec3::new(400.0, 50.0, 1.0);
+                Transform::from_translation(Vec3::new(400.0, HEALTH_UI_HEIGHT, 3.0));
+            health_transform.scale = Vec3::new(400.0, 30.0, 1.0);
             commands
                 .spawn_bundle(SpriteBundle {
                     material: materials.add(hitbox_texture_handle.into()),
@@ -226,6 +246,15 @@ pub fn match_setup(
                     ..Default::default()
                 })
                 .insert(PlayerHealthUI::new(entity_id));
+            let health_background = asset_server.load("sprites/health_background.png");
+            let health_transform =
+                Transform::from_translation(Vec3::new(410.0, HEALTH_UI_HEIGHT - 5.0, 2.0));
+
+            commands.spawn_bundle(SpriteBundle {
+                material: materials.add(health_background.into()),
+                transform: health_transform,
+                ..Default::default()
+            });
         }
     }
     state.set(GameState::Fighting).unwrap();

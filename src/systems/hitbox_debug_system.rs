@@ -36,21 +36,13 @@ pub fn hit_box_setup_system(
 
 #[allow(dead_code)]
 pub fn hitbox_debug_system(
-    #[allow(dead_code)]
-    _commands: Commands,
-    #[allow(dead_code)]
-    _should_render_hit_box: ResMut<ShouldRenderHitBoxes>,
-    #[allow(dead_code)]
-    _collider_set_component: Res<ColliderSetComponent>,
-    #[allow(dead_code)]
-    _texture_handles: ResMut<TextureAtlasDictionary>,
-    #[allow(dead_code)]
-    _debug_query: Query<(&mut Transform, &DebugBox, Entity), Without<PlayerState>>,
-    #[allow(dead_code)]
-    _player_query: Query<(&PlayerState, &Transform, &ScreenSideEnum), Without<DebugBox>>,
+    mut commands: Commands,
+    should_render_hit_box: ResMut<ShouldRenderHitBoxes>,
+    collider_set_component: Res<ColliderSetComponent>,
+    texture_handles: ResMut<TextureAtlasDictionary>,
+    mut debug_query: Query<(&mut Transform, &DebugBox, Entity), Without<PlayerState>>,
+    player_query: Query<(&PlayerState, &Transform, &ScreenSideEnum), Without<DebugBox>>,
 ) {
-
-    /*
     if should_render_hit_box.should_render {
         // move all of the current hit boxes away from the middle of the screen, not great but EH
         for (mut t, _, _) in debug_query.iter_mut() {
@@ -60,14 +52,15 @@ pub fn hitbox_debug_system(
         let mut debug_iter = debug_query.iter_mut();
 
         for (&player_state, &player_transform, &screen_side) in player_query.iter() {
-            let frame_colliders = &collider_set_component.colliders[&player_state.player_state.to_string()][player_state.current_sprite_index];
+            let frame_colliders = &collider_set_component.colliders
+                [&player_state.player_state.to_string()][player_state.current_sprite_index];
             for collider in frame_colliders {
                 let (mut transform, &_debug_box, entity) = debug_iter.next().unwrap();
                 let texture_handle;
                 match collider.collider_type {
                     ColliderType::HitBox => {
                         texture_handle = texture_handles.debug_hit_box_texture.clone();
-                    },
+                    }
                     ColliderType::HurtBox => {
                         texture_handle = texture_handles.debug_hurt_box_texture.clone();
                     }
@@ -76,7 +69,7 @@ pub fn hitbox_debug_system(
                 match screen_side {
                     ScreenSideEnum::Right => {
                         right_side_inverse = -1.0f32;
-                    },
+                    }
                     _ => {}
                 }
 
@@ -89,5 +82,4 @@ pub fn hitbox_debug_system(
             }
         }
     }
-    */
 }

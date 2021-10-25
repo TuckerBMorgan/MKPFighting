@@ -146,14 +146,18 @@ pub fn collision_system(
                 let first_event = &strikes[0];
                 if first_event.collider_type_1 == ColliderType::HitBox {
                     if player_state_1.can_take_a_hit() {
-                        health_1.take_damage(10);
-                        player_state_1.set_player_state_to_transition(PlayerStateEnum::TakeHit);
+                        let (damage, state) = player_state_2.level_and_amount_damage().expect(
+                            "Player 2 dealt collided dispite not being in an attacking state",
+                        );
+                        health_1.take_damage(damage);
+                        player_state_1.set_player_state_to_transition(state);
                     }
                 } else if player_state_2.can_take_a_hit() {
-                    if player_state_2.can_take_a_hit() {
-                        health_2.take_damage(10);
-                        player_state_2.set_player_state_to_transition(PlayerStateEnum::TakeHit);
-                    }
+                    let (damage, state) = player_state_1
+                        .level_and_amount_damage()
+                        .expect("Player 1 dealt collided dispite not being in an attacking state");
+                    health_2.take_damage(damage);
+                    player_state_2.set_player_state_to_transition(state);
                 }
             } else if bounces.len() > 0 {
                 player_state_1.is_colliding = true;
@@ -163,14 +167,14 @@ pub fn collision_system(
                     PlayerStateEnum::Idle => {
                         player_state_1.x_velocity = player_state_2.x_velocity * 2;
                     }
-                    PlayerStateEnum::Attack1 => {}
+                    PlayerStateEnum::HeavyAttack => {}
                     _ => {}
                 }
                 match player_state_2.player_state {
                     PlayerStateEnum::Idle => {
                         player_state_2.x_velocity = player_state_1.x_velocity * 2;
                     }
-                    PlayerStateEnum::Attack1 => {}
+                    PlayerStateEnum::HeavyAttack => {}
                     _ => {}
                 }
             }

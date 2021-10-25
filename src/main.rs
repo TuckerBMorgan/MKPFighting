@@ -2,10 +2,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 use structopt::StructOpt;
 
-use bevy::{
-    ecs::schedule::ShouldRun,
-    prelude::*,
-};
+use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use bevy_ggrs::{GGRSApp, GGRSPlugin, Rollback, RollbackIdProvider};
 use ggrs::{GameInput, P2PSession, PlayerType};
 
@@ -53,6 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let collider_both = Path::new("./assets/hitboxes/character_1.json");
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugin(GGRSPlugin)
         .insert_resource(WindowDescriptor {
             title: "MKP Fighting".to_string(),
             width: 1600.,
@@ -60,7 +58,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             vsync: true,
             ..Default::default()
         })
-        .add_plugin(GGRSPlugin)
         .insert_resource(opt)
         .add_state(GameState::Setup)
         .insert_resource(RestartSystemState::default())
@@ -88,7 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .with_system(player_state_system)
                     .with_system(player_movement_system)
                     .with_system(sprite_system)
-                    .with_system(round_timer_system)
+                    .with_system(round_timer_system),
             ),
         )
         //Any system we don't want in rollback, but do want fun during the fighting state
@@ -106,6 +103,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .with_system(restart_system),
         )
         .with_p2p_session(p2p_sess)
+        .insert_resource(WindowDescriptor {
+            title: "MKP Fighting".to_string(),
+            width: 1600.,
+            height: 400.,
+            vsync: true,
+            ..Default::default()
+        })
         .run();
     Ok(())
 }

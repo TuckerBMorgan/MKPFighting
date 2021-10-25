@@ -8,7 +8,8 @@ pub struct InputEvents {
     pub left_right_axis: i8,
     pub up_down_axis: i8,
     pub jump_was_pressed: bool,
-    pub attack_1_was_pressed: bool,
+    pub heavy_attack_was_pressed: bool,
+    pub light_attack_was_pressed: bool,
     pub special_ability: bool,
     pub dash: bool,
 }
@@ -19,9 +20,10 @@ impl InputEvents {
         vector[0] = self.left_right_axis as u8;
         vector[1] = self.up_down_axis as u8;
         vector[2] = self.jump_was_pressed as u8;
-        vector[3] = self.attack_1_was_pressed as u8;
-        vector[4] = self.special_ability as u8;
-        vector[5] = self.dash as u8;
+        vector[3] = self.heavy_attack_was_pressed as u8;
+        vector[4] = self.light_attack_was_pressed as u8;
+        vector[5] = self.special_ability as u8;
+        vector[6] = self.dash as u8;
         return vector;
     }
 
@@ -30,9 +32,10 @@ impl InputEvents {
             left_right_axis: input[player_index].buffer[0] as i8,
             up_down_axis: input[player_index].buffer[1] as i8,
             jump_was_pressed: input[player_index].buffer[2] != 0,
-            attack_1_was_pressed: input[player_index].buffer[3] != 0,
-            special_ability: input[player_index].buffer[4] != 0,
-            dash: input[player_index].buffer[5] != 0,
+            heavy_attack_was_pressed: input[player_index].buffer[3] != 0,
+            light_attack_was_pressed: input[player_index].buffer[4] != 0,
+            special_ability: input[player_index].buffer[5] != 0,
+            dash: input[player_index].buffer[6] != 0,
         }
     }
 }
@@ -68,9 +71,14 @@ pub fn keyboard_input_system(
         input_events.jump_was_pressed = true;
     }
 
-    input_events.attack_1_was_pressed = false;
+    input_events.heavy_attack_was_pressed = false;
     if keyboard_input.pressed(KeyCode::Q) {
-        input_events.attack_1_was_pressed = true;
+        input_events.heavy_attack_was_pressed = true;
+    }
+
+    input_events.light_attack_was_pressed = false;
+    if keyboard_input.pressed(KeyCode::C) {
+        input_events.light_attack_was_pressed = true;
     }
 
     input_events.special_ability = false;

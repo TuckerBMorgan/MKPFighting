@@ -202,7 +202,7 @@
                 }
             ]
         ],
-        "Attack1":
+        "HeavyAttack":
         [
             [
                 {
@@ -310,6 +310,63 @@
                         50.0
                     ],
                     "collider_type":"HurtBox"
+                }
+            ]
+        ],
+        "LightAttack":
+        [
+            [
+                {
+                    "offset":[
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "dimension":[
+                        50.0,
+                        50.0
+                    ],
+                    "collider_type":"HitBox"
+                }
+            ],
+            [
+                {
+                    "offset":[
+                        50.0,
+                        20.0,
+                        0.0
+                    ],
+                    "dimension":[
+                        100.0,
+                        50.0
+                    ],
+                    "collider_type":"HurtBox"
+                },
+                {
+                    "offset":[
+                        20.0,
+                        0.0,
+                        0.0
+                    ],
+                    "dimension":[
+                        50.0,
+                        50.0
+                    ],
+                    "collider_type":"HitBox"
+                }
+            ],
+            [
+                {
+                    "offset":[
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "dimension":[
+                        50.0,
+                        50.0
+                    ],
+                    "collider_type":"HitBox"
                 }
             ]
         ],

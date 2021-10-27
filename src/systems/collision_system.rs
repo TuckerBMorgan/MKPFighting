@@ -164,7 +164,6 @@ pub fn collision_system(
                 if *state.current() != GameState::HitStop {
                     state.set(GameState::HitStop).unwrap();
                 }
-                //Set the game state to HitStop
             } else if bounces.len() > 0 {
                 player_state_1.is_colliding = true;
                 player_state_2.is_colliding = true;

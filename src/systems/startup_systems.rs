@@ -121,6 +121,15 @@ pub fn match_setup(
         200.0,
         4,
     );
+    load_sprite_atlas_into_texture_dictionary(
+        String::from("sprites/MediumAttack.png"),
+        &asset_server,
+        &mut texture_atlases,
+        &mut texture_atlas_handles,
+        200.0,
+        200.0,
+        5,
+    );
 
     let num_players = p2p_session
         .map(|s| s.num_players())

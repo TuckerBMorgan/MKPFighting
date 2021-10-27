@@ -8,9 +8,11 @@ pub enum PlayerStateEnum {
     Run,
     Jump,
     HeavyAttack,
+    MediumAttack,
     LightAttack,
     Fall,
     TakeLightHit,
+    TakeMediumHit,
     TakeHeavyHit,
     Death,
     Dash,
@@ -61,9 +63,11 @@ impl PlayerStateEnum {
             PlayerStateEnum::Run => String::from("Run"),
             PlayerStateEnum::Jump => String::from("Jump"),
             PlayerStateEnum::HeavyAttack => String::from("HeavyAttack"),
+            PlayerStateEnum::MediumAttack => String::from("MediumAttack"),
             PlayerStateEnum::LightAttack => String::from("LightAttack"),
             PlayerStateEnum::Fall => String::from("Fall"),
             PlayerStateEnum::TakeLightHit => String::from("TakeHit"),
+            PlayerStateEnum::TakeMediumHit => String::from("TakeHit"),
             PlayerStateEnum::TakeHeavyHit => String::from("TakeHit"),
             PlayerStateEnum::Death => String::from("Death"),
             PlayerStateEnum::Dash => String::from("Dash"),
@@ -96,6 +100,7 @@ pub struct PlayerState {
     pub has_dahsed: bool,
     pub dash_timer: AbilityTimer,
     pub light_attack_timer: AbilityTimer,
+    pub mediun_attack_timer: AbilityTimer,
     pub heavy_attack_timer: AbilityTimer,
 }
 
@@ -114,6 +119,7 @@ impl PlayerState {
             has_dahsed: false,
             dash_timer: AbilityTimer::new(35),
             light_attack_timer: AbilityTimer::new(25),
+            mediun_attack_timer: AbilityTimer::new(50),
             heavy_attack_timer: AbilityTimer::new(75),
         }
     }
@@ -138,10 +144,16 @@ impl PlayerState {
                     self.player_state = self.desired_player_state;
                 }
             }
+            PlayerStateEnum::MediumAttack => {
+                if self.desired_player_state == PlayerStateEnum::Jump {
+                    self.player_state = self.desired_player_state;
+                }
+            }
             PlayerStateEnum::Fall => {
                 //For now, keep it in this, but techianlly a "Landed" state would be a valid transtion for this
             }
             PlayerStateEnum::TakeLightHit => {}
+            PlayerStateEnum::TakeMediumHit => {}
             PlayerStateEnum::TakeHeavyHit => {}
             PlayerStateEnum::Death => {}
             PlayerStateEnum::Dash => {}
@@ -173,9 +185,11 @@ impl PlayerState {
             PlayerStateEnum::Run => PlayerStateEnum::Run,
             PlayerStateEnum::Jump => PlayerStateEnum::Jump,
             PlayerStateEnum::HeavyAttack => PlayerStateEnum::Idle,
+            PlayerStateEnum::MediumAttack => PlayerStateEnum::Idle,
             PlayerStateEnum::LightAttack => PlayerStateEnum::Idle,
             PlayerStateEnum::Fall => PlayerStateEnum::Fall,
             PlayerStateEnum::TakeLightHit => PlayerStateEnum::Idle,
+            PlayerStateEnum::TakeMediumHit => PlayerStateEnum::Idle,
             PlayerStateEnum::TakeHeavyHit => PlayerStateEnum::Idle,
             PlayerStateEnum::Death => PlayerStateEnum::Death,
             PlayerStateEnum::Dash => PlayerStateEnum::Idle,
@@ -183,10 +197,12 @@ impl PlayerState {
     }
 
     pub fn can_take_a_hit(&self) -> bool {
-        return (self.player_state != PlayerStateEnum::TakeLightHit
-            && self.desired_player_state != PlayerStateEnum::TakeLightHit)
-            && (self.player_state != PlayerStateEnum::TakeHeavyHit
-                && self.desired_player_state != PlayerStateEnum::TakeHeavyHit);
+        return (self.player_state != PlayerStateEnum::TakeHeavyHit
+            && self.desired_player_state != PlayerStateEnum::TakeHeavyHit)
+            && (self.player_state != PlayerStateEnum::TakeMediumHit
+                && self.desired_player_state != PlayerStateEnum::TakeMediumHit)
+            && (self.player_state != PlayerStateEnum::TakeLightHit
+                && self.desired_player_state != PlayerStateEnum::TakeLightHit);
     }
 
     pub fn set_player_state_to_transition(&mut self, new_player_state: PlayerStateEnum) {
@@ -201,6 +217,9 @@ impl PlayerState {
         if self.heavy_attack_timer.running() {
             self.heavy_attack_timer.tick();
         }
+        if self.mediun_attack_timer.running() {
+            self.mediun_attack_timer.tick();
+        }
         if self.dash_timer.running() {
             self.dash_timer.tick();
         }
@@ -209,6 +228,9 @@ impl PlayerState {
     pub fn level_and_amount_damage(&self) -> Option<(usize, PlayerStateEnum)> {
         if self.player_state == PlayerStateEnum::LightAttack {
             return Some((2, PlayerStateEnum::TakeLightHit));
+        }
+        else if self.player_state == PlayerStateEnum::MediumAttack {
+            return Some((5, PlayerStateEnum::TakeMediumHit));
         }
         return Some((10, PlayerStateEnum::TakeHeavyHit));
     }
@@ -277,6 +299,16 @@ pub fn player_state_system(
                     player_state.set_player_state_to_transition(PlayerStateEnum::LightAttack);
                 }
             }
+            
+            if input.medium_attack_was_pressed == true
+                && player_state.mediun_attack_timer.running() == false
+            {
+                if player_state.player_state == PlayerStateEnum::Idle
+                    || player_state.player_state == PlayerStateEnum::Run
+                {
+                    player_state.set_player_state_to_transition(PlayerStateEnum::MediumAttack);
+                }
+            }
 
             if input.dash == true
                 && input.left_right_axis != 0
@@ -343,6 +375,11 @@ pub fn player_state_system(
                     player_state.x_velocity = 0;
                     player_state.heavy_attack_timer.start();
                 }
+                PlayerStateEnum::MediumAttack => {
+                    next_animation = "sprites/MediumAttack.png";
+                    player_state.x_velocity = 0;
+                    player_state.mediun_attack_timer.start();
+                }
                 PlayerStateEnum::LightAttack => {
                     next_animation = "sprites/LightAttack.png";
                     player_state.x_velocity = 0;
@@ -355,6 +392,11 @@ pub fn player_state_system(
                     next_animation = "sprites/TakeHit.png";
                     player_state.x_velocity =
                         PLAYER_LIGHT_HIT_SPEED * screen_side.back_direction() as i32;
+                }
+                PlayerStateEnum::TakeMediumHit => {
+                    next_animation = "sprites/TakeHit.png";
+                    player_state.x_velocity =
+                        PLAYER_MEDIUM_HIT_SPEED * screen_side.back_direction() as i32;
                 }
                 PlayerStateEnum::TakeHeavyHit => {
                     next_animation = "sprites/TakeHit.png";

@@ -6,7 +6,8 @@ const GRAVITY: i32 = 1;
 pub const FLOOR_HEIGHT: f32 = -250.0f32;
 pub const PLAYER_SPEED: i32 = 5;
 pub const PLAYER_DASH_SPEED: i32 = 15;
-pub const PLAYER_LIGHT_HIT_SPEED: i32 = 10;
+pub const PLAYER_LIGHT_HIT_SPEED: i32 = 9;
+pub const PLAYER_MEDIUM_HIT_SPEED: i32 = 12;
 pub const PLAYER_HEAVY_HIT_SPEED: i32 = 15;
 
 pub fn player_movement_system(

@@ -61,7 +61,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_plugin(GGRSPlugin)
         .insert_resource(ShouldRenderHitBoxes::new(opt.render_hitboxes))
         .insert_resource(opt)
-        .insert_resource(HitStopTimer::new(5))
+        .insert_resource(HitStopTimer::new(2))
         .add_state(GameState::Setup)
         .insert_resource(RestartSystemState::default())
         .insert_resource(LocalId::default())

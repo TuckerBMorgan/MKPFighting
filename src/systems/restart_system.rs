@@ -89,6 +89,7 @@ pub fn restart_system(
                     player_state.hard_reset();
                     player_health.reset();
                     transform.translation.x = -120.0;
+                    transform.translation.y = FLOOR_HEIGHT;
                     sprite.index = 0;
                 }
                 for (mut transform, mut player_state, mut player_health, mut sprite, _player2) in
@@ -97,6 +98,7 @@ pub fn restart_system(
                     player_state.hard_reset();
                     player_health.reset();
                     transform.translation.x = 120.0;
+                    transform.translation.y = FLOOR_HEIGHT;
                     sprite.index = 0;
                 }
                 for (_cloud, entity) in clouds.iter() {

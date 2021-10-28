@@ -1,1 +1,1 @@
-cargo run -- --local-port 7001 --players 127.0.0.1:7000 localhost
+cargo run -- --local-port 7001 --players 216.243.46.187:7000 localhost

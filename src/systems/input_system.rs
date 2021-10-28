@@ -58,6 +58,10 @@ pub fn keyboard_input_system(
         input_events.left_right_axis = 1;
     }
 
+    if keyboard_input.pressed(KeyCode::Left) && keyboard_input.pressed(KeyCode::Right) {
+        input_events.left_right_axis = 0;
+    }
+
     if keyboard_input.pressed(KeyCode::Up) == false && keyboard_input.pressed(KeyCode::Down) == false {
         input_events.up_down_axis = 0;
     }
@@ -69,12 +73,9 @@ pub fn keyboard_input_system(
     }
 
     input_events.jump_was_pressed = false;
-    
     if keyboard_input.pressed(KeyCode::Up) {
         input_events.jump_was_pressed = true;
     }
-    
-
 
     input_events.light_attack_was_pressed = false;
     if keyboard_input.pressed(KeyCode::Q) {

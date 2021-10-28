@@ -225,6 +225,7 @@ fn sprite_system(
                 if desired_state == player_state.player_state {
                     player_state.reset_state();
                 } else {
+                    player_state.reset_state();
                     player_state.set_player_state_to_transition(desired_state);
                 }
                 continue;

@@ -26,6 +26,17 @@ pub fn player_movement_system(
 
         match player_state.player_state {
             PlayerStateEnum::Run => {}
+
+            PlayerStateEnum::TakeLightHit |
+            PlayerStateEnum::TakeMediumHit |
+            PlayerStateEnum::TakeHeavyHit => {
+                player_state.y_velocity -= GRAVITY;
+                if transform.translation.y < FLOOR_HEIGHT {
+                    player_state.y_velocity = 0;
+                    transform.translation.y = FLOOR_HEIGHT;
+                }
+            }
+
             PlayerStateEnum::Jump => {
                 player_state.y_velocity -= GRAVITY;
                 if player_state.y_velocity < 0 {

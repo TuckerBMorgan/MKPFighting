@@ -26,7 +26,13 @@ pub fn player_movement_system(
 
         match player_state.player_state {
             PlayerStateEnum::Run => {}
-
+            PlayerStateEnum::Dash => {
+                player_state.y_velocity -= GRAVITY;
+                if transform.translation.y < FLOOR_HEIGHT {
+                    player_state.y_velocity = 0;
+                    transform.translation.y = FLOOR_HEIGHT;
+                }
+            }
             PlayerStateEnum::TakeLightHit |
             PlayerStateEnum::TakeMediumHit |
             PlayerStateEnum::TakeHeavyHit => {
@@ -52,6 +58,9 @@ pub fn player_movement_system(
                 }
             }
             PlayerStateEnum::Idle => {
+                if transform.translation.y > FLOOR_HEIGHT {
+                    player_state.set_player_state_to_transition(PlayerStateEnum::Fall);
+                }
                 if player_state.is_colliding == false {
                     player_state.x_velocity = 0;
                 }

@@ -316,6 +316,7 @@ pub fn player_state_system(
             {
                 if player_state.player_state == PlayerStateEnum::Idle
                     || player_state.player_state == PlayerStateEnum::Run
+                        || player_state.player_state == PlayerStateEnum::Jump
                 {
                     player_state.set_player_state_to_transition(PlayerStateEnum::Dash);
                 }

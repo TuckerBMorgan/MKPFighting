@@ -73,6 +73,8 @@ pub fn collision_system(
     >,
     mut state: ResMut<State<GameState>>,
 ) {
+
+    let mut set_hit_stop = false;
     for (&transform_1, &_player_1, mut player_state_1, mut health_1, &player_1_side) in
         player_1_query.iter_mut()
     {
@@ -161,9 +163,7 @@ pub fn collision_system(
                     health_2.take_damage(damage);
                     player_state_2.set_player_state_to_transition(state);
                 }
-                if *state.current() != GameState::HitStop {
-                    state.set(GameState::HitStop).unwrap();
-                }
+             set_hit_stop = true;
             } else if bounces.len() > 0 {
                 player_state_1.is_colliding = true;
                 player_state_2.is_colliding = true;
@@ -183,6 +183,12 @@ pub fn collision_system(
                     _ => {}
                 }
             }
+        }
+    }
+
+    if set_hit_stop {
+        if *state.current() != GameState::HitStop {
+            state.set(GameState::HitStop).unwrap();
         }
     }
 }
